@@ -60,38 +60,21 @@
     return !!grid && grid.hasAttribute('theater');
   };
 
-  /* 1) Automatic theater mode — click .ytp-size-button, throttled 1s like upstream.
-   * Untick (or master off) triggers a one-shot revert back out of theater. */
+  /* 1) Automatic theater mode — the toggle is the source of truth, both ways.
+   * ON: YouTube is put into theater. OFF: YouTube is kept out of theater.
+   * Enforced every sweep (throttled) so SPA navigations and YouTube's own
+   * remembered preference can't drift away from the setting. */
   let lastTheaterClick = 0;
-  let theaterWasOn = false;
-  let theaterRevertTries = 0;
   function theaterSweep() {
-    if (!isWatch()) { theaterRevertTries = 0; return; }
-    const wantOn = on() && s.enhTheater;
-    if (wantOn) {
-      theaterWasOn = true;
-      theaterRevertTries = 0;
-      try {
-        if (isTheater()) return;
-        if (Date.now() - lastTheaterClick < 1000) return;
-        const btn = document.querySelector('button.ytp-size-button');
-        if (!btn || btn.offsetParent === null) return;
-        lastTheaterClick = Date.now();
-        btn.click();
-      } catch {}
-      return;
-    }
-    // Setting just turned off: exit theater we put it in (a few retries, then give up).
-    if (theaterWasOn) { theaterWasOn = false; theaterRevertTries = 5; }
-    if (theaterRevertTries <= 0) return;
+    if (!isWatch()) return;
+    const wantTheater = on() && s.enhTheater;
     try {
-      if (!isTheater()) { theaterRevertTries = 0; return; }
+      if (isTheater() === wantTheater) return;
       if (Date.now() - lastTheaterClick < 1000) return;
       const btn = document.querySelector('button.ytp-size-button');
       if (!btn || btn.offsetParent === null) return;
       lastTheaterClick = Date.now();
       btn.click();
-      theaterRevertTries--;
     } catch {}
   }
 
@@ -156,20 +139,18 @@
     } catch {}
   }
 
-  /* 4) Preferred quality — setPlaybackQualityRange with retries after navigation */
-  let qualityTries = 0, lastQualityUrl = '';
+  /* 4) Preferred quality — the toggle is the source of truth.
+   * Re-applied every sweep while enabled, so neither YouTube's auto pick nor
+   * mid-video changes can drift away from the setting. */
   function qualitySweep() {
     if (!on() || !s.enhQuality || !isWatch()) return;
     try {
-      if (location.href !== lastQualityUrl) { lastQualityUrl = location.href; qualityTries = 0; }
-      if (qualityTries > 10) return;
       const p = player();
-      if (!p || typeof p.setPlaybackQualityRange !== 'function' || typeof p.getPlaybackQuality !== 'function') { qualityTries++; return; }
+      if (!p || typeof p.setPlaybackQualityRange !== 'function' || typeof p.getPlaybackQuality !== 'function') return;
       const want = s.enhQualityValue || 'hd1080';
       let cur = null;
       try { cur = p.getPlaybackQuality(); } catch {}
-      if (cur === want) { qualityTries = 11; return; }
-      qualityTries++;
+      if (cur === want) return;
       try { p.setPlaybackQualityRange(want, want); } catch {}
       try { if (typeof p.setPlaybackQuality === 'function') p.setPlaybackQuality(want); } catch {}
     } catch {}
@@ -637,7 +618,6 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
     if (location.href !== lastUrl) {
       lastUrl = location.href;
       userChoseAutoplay = false;
-      qualityTries = 0;
       setTimeout(sweep, 500);
       setTimeout(sweep, 2000);
     }
@@ -645,7 +625,6 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
   try {
     document.addEventListener('yt-navigate-finish', () => {
       userChoseAutoplay = false;
-      qualityTries = 0;
       setTimeout(sweep, 500);
     });
   } catch {}
