@@ -2,16 +2,16 @@
 
 # ▶ TrueBlock for YouTube
 
-**The ultra-fast, privacy-first YouTube ad blocker — now with SponsorBlock-style crowdsourced skips, 19 enhancements & 5 dark themes.**
+**The ultra-fast, privacy-first YouTube ad blocker — now with SponsorBlock-style crowdsourced skips & 18 enhancements.**
 
-[![Version](https://img.shields.io/badge/version-1.5.2-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
+[![Version](https://img.shields.io/badge/version-1.5.3-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
 [![Chrome](https://img.shields.io/badge/Chrome-MV3-green?style=flat-square&logo=googlechrome)](https://github.com/9M2PJU/trueblock-youtube-adblocker)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-yellow?style=flat-square)](LICENSE)
 [![No tracking](https://img.shields.io/badge/tracking-none-blue?style=flat-square)](#-privacy)
 
 *Skips video ads in ~50&nbsp;ms · kills banners, overlays & sponsored slots · bypasses anti-adblock walls — all running 100% locally.*
 
-[⬇️ Install](#-install-30-seconds) · [✨ Features](#-what-it-does) · [🎨 Themes](#-themes) · [🔒 Privacy](#-privacy) · [🙏 Credits](#-credits)
+[⬇️ Install](#-install-30-seconds) · [✨ Features](#-what-it-does) · [🔒 Privacy](#-privacy) · [🙏 Credits](#-credits)
 
 </div>
 
@@ -64,15 +64,6 @@ Skips **in-video** sponsor reads, intros, outros and more using the community da
 
 > Privacy note: this sends the current **video ID** to `sponsor.ajayyy.com` to fetch segments (untick to disable). Everything else in TrueBlock stays fully local.
 
-### 🎨 Themes
-
-Lite theme engine — force-dark + remap YouTube's variables, ~20 KB, no build step:
-
-- **5 presets**: Deep-Dark · Dracula · Catppuccin-Mocha · Discord · Pure Black
-- **Accent picker**: progress bar, links & buttons in any color (empty = preset default)
-
-> Preset colors adapted from RaitaroH's [YouTube-DeepDark](https://github.com/RaitaroH/YouTube-DeepDark). For the full 32-theme engine see [YouTube-Enhancer](https://github.com/YouTube-Enhancer/extension).
-
 ---
 
 ## 🗂️ Project layout
@@ -84,7 +75,7 @@ src/
   inject.js            # MAIN-world player-response cleaner
   content.js           # ad skipper + DOM cleaner + anti-adblock
   sponsorblock.js      # crowdsourced sponsor skipping, on by default (original API client)
-  enhancements.js      # 19 optional enhancements + themes (~30 KB vanilla JS)
+  enhancements.js      # 18 optional enhancements (~30 KB vanilla JS)
   content.css          # cosmetic ad hiding
   background.js        # badge counter + stats
   popup.html/.css/.js  # control panel + About dialog
@@ -114,12 +105,13 @@ Free forever, no ads, no tracking. If it saves your sanity, chip in:
 [![Wise](https://img.shields.io/badge/Wise-faizulz13-163300?style=flat-square&logo=wise)](https://wise.com/pay/me/faizulz13)
 
 - Author & maintainer: **[9M2PJU](https://hamradio.my)** — <https://hamradio.my>
-- Enhancement concepts + theme colors: [YouTube-Enhancer/extension](https://github.com/YouTube-Enhancer/extension) (MIT) and RaitaroH's [YouTube-DeepDark](https://github.com/RaitaroH/YouTube-DeepDark) — re-implemented natively, no upstream code vendored.
+- Enhancement concepts: [YouTube-Enhancer/extension](https://github.com/YouTube-Enhancer/extension) (MIT) — re-implemented natively, no upstream code vendored.
 - In-video sponsor skipping inspired by [ajayyy/SponsorBlock](https://github.com/ajayyy/SponsorBlock) (GPL-3.0) via its public read API — original client code, nothing copied.
 - License: [GPL-3.0](LICENSE) — Copyright © 2026 9M2PJU. PRs welcome — especially updated selectors when YouTube moves things around (`SKIP_SELECTORS` in `src/content.js`).
 
 ## 📝 Changelog
 
+- **v1.5.3** — Removed broken themes (use YouTube's native appearance settings)
 - **v1.5.2** — SponsorBlock CORS fix: API fetched via background worker
 - **v1.5.1** — Theme reliability: higher-specificity selectors, instant apply on setting change, toast confirmation, popup dropdowns no longer risk unticking their row
 - **v1.5.0** — SponsorBlock on by default · donate buttons (PayPal · Coffee · Wise) + GitHub FUNDING.yml

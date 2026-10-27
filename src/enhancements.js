@@ -6,14 +6,11 @@
  * theater via .ytp-size-button, autoplay via .ytp-autonav-toggle,
  * continue-watching via ytd-watch-flexy youthereDataChanged_ + confirm click,
  * quality via #movie_player.setPlaybackQualityRange, volume/speed via <video>,
- * hide-shorts via body-class CSS (same selectors as upstream index.css),
- * remaining-time via span appended to .ytp-time-contents,
+ * hide-shorts via body-class CSS, remaining-time via .ytp-time-contents span,
  * shorts-autoscroll via ended -> #navigation-button-down click,
  * loop via video.loop toggle, timestamp via youtu.be clipboard copy,
  * screenshot via canvas drawImage + download, volume-boost via WebAudio gain,
  * distractions via CSS (.ytp-ce-element, #chat, paid overlay).
- * Lite themes: 5 presets adapted from RaitaroH's YouTube-DeepDark
- * (via YouTube-Enhancer/extension, MIT) mapped onto --yt-spec-* vars + dark attr.
  */
 (() => {
   'use strict';
@@ -22,8 +19,7 @@
 
   const DEFAULTS = {
     enabled: true,
-    enhTheater: false,
-    enhAutoplayOff: false,
+    enhTheater: false,    enhAutoplayOff: false,
     enhRememberVolume: true,
     enhQuality: false,
     enhQualityValue: 'hd1080',
@@ -37,9 +33,6 @@
     enhHideDistractions: false,
     enhRemaining: false,
     enhShortsScroll: false,
-    enhTheme: false,
-    enhThemePreset: 'deep-dark',
-    enhAccent: '',
     enhSeekButtons: false,
     enhSeekSecs: '10',
     enhSpeedButtons: false,
@@ -55,7 +48,7 @@
     chrome.storage.onChanged.addListener((ch, area) => {
       if (area !== 'sync') return;
       for (const k of Object.keys(ch)) s[k] = ch[k].newValue;
-      try { setTimeout(sweep, 0); } catch {} // apply theme/toggle changes immediately
+      try { setTimeout(sweep, 0); } catch {} // apply toggle changes immediately
     });
   } catch {}
 
@@ -227,7 +220,6 @@
       buttonsSweep();
       remainingSweep();
       shortsScrollSweep();
-      themeSweep();
       seekSpeedSweep();
       clutterSweep();
       perRowSweep();
@@ -472,63 +464,6 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
           if (next) next.click();
         } catch {}
       });
-    } catch {}
-  }
-
-  /* 13) Lite themes — 5 presets mapped onto YouTube's --yt-spec-* vars.
-   * Preset colors adapted from RaitaroH's YouTube-DeepDark (via YouTube-Enhancer). */
-  const THEMES = {
-    'deep-dark':  { name: 'Deep-Dark', color: '#00adee', bg: '#111111', second: '#181818', hover: '#232323', text: '#eff0f1', dimmer: '#cccccc' },
-    'dracula':    { name: 'Dracula', color: '#bd93f9', bg: '#282a36', second: '#2e3140', hover: '#44475a', text: '#f8f8f2', dimmer: '#bcc2cd' },
-    'mocha':      { name: 'Catppuccin-Mocha', color: '#cba6f7', bg: '#1e1e2e', second: '#181825', hover: '#313244', text: '#cdd6f4', dimmer: '#a6adc8' },
-    'discord':    { name: 'Discord', color: '#7289da', bg: '#1e2124', second: '#2f3136', hover: '#484b51', text: '#ffffff', dimmer: '#ada8aa' },
-    'pure-black': { name: 'Pure Black', color: '#ffffff', bg: '#000000', second: '#1e1e1e', hover: '#313131', text: '#ffffff', dimmer: '#aaaaaa' }
-  };
-  let lastThemeKey = '';
-  function themeCss(p, accent) {
-    const a = accent || p.color;
-    // Doubled class (0-2-1) outranks YouTube's html[dark] (0-1-1) no matter the order.
-    const css = `html.tb-theme{--yt-spec-base-background:${p.bg}!important;--yt-spec-raised-background:${p.second}!important;`
-      + `--yt-spec-menu-background:${p.second}!important;--yt-spec-text-primary:${p.text}!important;`
-      + `--yt-spec-text-secondary:${p.dimmer}!important;--yt-spec-icon-inactive:${p.dimmer}!important;`
-      + `--yt-spec-10-percent-layer:${p.hover}!important;--yt-spec-touch-response:${p.hover}!important;`
-      + `--yt-spec-badge-chip-background:${p.hover}!important;--yt-spec-call-to-action:${a}!important;`
-      + `--yt-spec-suggested-action:${a}!important;--ytd-searchbox-background:${p.second}!important}`
-      + `html.tb-theme .ytp-play-progress{background:${a}!important}`
-      + `html.tb-theme .ytp-scrubber-button{background:${a}!important}`
-      + `html.tb-theme .ytp-volume-slider-handle:before{background:${a}!important}`
-      + `html.tb-theme a.yt-simple-endpoint{color:${a}}`;
-    return css.split('html.tb-theme').join('html.tb-theme.tb-theme');
-  }
-  function themeSweep() {
-    try {
-      const want = on() && s.enhTheme;
-      const root = document.documentElement;
-      let st = document.getElementById('tb-theme');
-      if (!want) {
-        st?.remove();
-        root.classList.remove('tb-theme');
-        if (root.__tb_darkAdded) { root.removeAttribute('dark'); root.__tb_darkAdded = false; }
-        lastThemeKey = '';
-        return;
-      }
-      const p = THEMES[s.enhThemePreset] || THEMES['deep-dark'];
-      const accent = /^#[0-9a-fA-F]{6}$/.test(s.enhAccent || '') ? s.enhAccent : '';
-      const key = `${s.enhThemePreset}|${accent}`;
-      if (!root.hasAttribute('dark')) { root.setAttribute('dark', ''); root.__tb_darkAdded = true; }
-      root.classList.add('tb-theme');
-      if (!st) {
-        st = document.createElement('style');
-        st.id = 'tb-theme';
-        (document.head || root).appendChild(st);
-      }
-      if (key !== lastThemeKey) {
-        st.textContent = themeCss(p, accent);
-        const first = !lastThemeKey;
-        lastThemeKey = key;
-        // Confirm visibly on user-driven changes (also proves the engine is alive).
-        if (!first) toast(`Theme: ${(THEMES[s.enhThemePreset] || {}).name || s.enhThemePreset} applied`);
-      }
     } catch {}
   }
 
