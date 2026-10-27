@@ -3,7 +3,7 @@
   "name": "TrueBlock for YouTube",
   "short_name": "TrueBlock YT",
   "version": "1.9.8",
-  "description": "TrueBlock: adblock, sponsor skip & enhancer for YouTube. Blocks ads, skips sponsored segments, enhances playback. Private, local-first, no tracking.",
+  "description": "TrueBlock: adblock, sponsor skip & enhancer for YouTube. Blocks ads, skips sponsors. Private, local-first.",
   "author": "9M2PJU",
   "homepage_url": "https://hamradio.my",
   "minimum_chrome_version": "116",
