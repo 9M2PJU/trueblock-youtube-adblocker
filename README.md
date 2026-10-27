@@ -82,7 +82,7 @@ rules/block_ads.json   # network blocklist (15 DNR rules)
 src/
   inject.js            # MAIN-world player-response cleaner
   content.js           # ad skipper + DOM cleaner + anti-adblock
-  sponsorblock.js      # opt-in crowdsourced sponsor skipping (original API client)
+  sponsorblock.js      # crowdsourced sponsor skipping, on by default (original API client)
   enhancements.js      # 19 optional enhancements + themes (~30 KB vanilla JS)
   content.css          # cosmetic ad hiding
   background.js        # badge counter + stats
