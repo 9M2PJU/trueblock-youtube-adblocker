@@ -4,7 +4,7 @@
 
 **The ultra-fast, privacy-first YouTube ad blocker — now with SponsorBlock-style crowdsourced skips, 19 enhancements & 5 dark themes.**
 
-[![Version](https://img.shields.io/badge/version-1.7.0-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
+[![Version](https://img.shields.io/badge/version-1.7.1-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
 [![Chrome](https://img.shields.io/badge/Chrome-MV3-green?style=flat-square&logo=googlechrome)](https://github.com/9M2PJU/trueblock-youtube-adblocker)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-yellow?style=flat-square)](LICENSE)
 [![No tracking](https://img.shields.io/badge/tracking-none-blue?style=flat-square)](#-privacy)
@@ -118,6 +118,7 @@ Free forever, no ads, no tracking. If it saves your sanity, chip in:
 
 ## 📝 Changelog
 
+- **v1.7.1** — EQ self-reports: toasts preset/±dB on change, warns if Flat-neutral, suspended-audio, or unsupported
 - **v1.7.0** — 6-band equalizer (5 presets) sharing one WebAudio graph with volume boost
 - **v1.6.0** — Themes v2: rebuilt with outside-label controls, Pure Black default, bidirectional enforcement, container fallbacks, read-back self-check + toasts
 - **v1.5.5** — Settings are the source of truth: theater enforced both ways (on puts it in, off keeps it out), quality re-applied persistently instead of giving up after retries

@@ -309,6 +309,10 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
     vocal: [-2, 0, 3, 4, 2, 0],
     vshape: [5, 2, -2, 0, 3, 5]
   };
+  const EQ_NAMES = { flat: 'Flat (neutral)', bass: 'Bass Boost', treble: 'Treble Boost', vocal: 'Vocal', vshape: 'V-Shape' };
+  let lastEqKey = '';
+  let eqInit = false;
+  let eqUnavailableToast = false;
   const audioGraphs = new WeakMap();
   function ensureAudioGraph(video) {
     let g = audioGraphs.get(video);
@@ -355,18 +359,37 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
   }
   function eqSweep() {
     try {
-      const gains = on() && s.enhEQ ? (EQ_PRESETS[s.enhEqPreset] || EQ_PRESETS.flat) : EQ_PRESETS.flat;
+      const enabled = on() && s.enhEQ;
+      const gains = enabled ? (EQ_PRESETS[s.enhEqPreset] || EQ_PRESETS.flat) : EQ_PRESETS.flat;
+      const key = `${enabled}|${s.enhEqPreset}`;
       const v = document.querySelector('video.html5-main-video');
       if (!v) return;
       const active = gains.some((d) => d !== 0);
-      if (!active && !audioGraphs.get(v)) return; // flat + no graph: nothing to do
+      if (!active && !audioGraphs.get(v)) { lastEqKey = key; eqInit = true; return; }
       const g = ensureAudioGraph(v);
-      if (!g) return;
+      if (!g) {
+        if (!eqUnavailableToast) { eqUnavailableToast = true; toast('Equalizer unavailable in this browser'); }
+        return;
+      }
       try {
         if (g.ctx.state === 'suspended') g.ctx.resume().catch(() => {});
         for (let i = 0; i < 6; i++) {
           if (Math.abs(g.filters[i].gain.value - gains[i]) > 0.01) {
             g.filters[i].gain.setTargetAtTime(gains[i], g.ctx.currentTime, 0.03);
+          }
+        }
+        // Self-report on user-driven changes (silent on page load).
+        if (key !== lastEqKey) {
+          const first = !eqInit;
+          lastEqKey = key;
+          eqInit = true;
+          if (!first && enabled) {
+            const peak = Math.max(...gains.map(Math.abs));
+            let msg = peak === 0
+              ? `EQ on (${EQ_NAMES[s.enhEqPreset] || 'Flat'} = neutral — pick Bass/V-Shape to hear it)`
+              : `EQ: ${EQ_NAMES[s.enhEqPreset] || s.enhEqPreset} (±${peak} dB)`;
+            if (g.ctx.state === 'suspended') msg += ' — tap page once to unlock audio';
+            toast(msg);
           }
         }
       } catch {}
