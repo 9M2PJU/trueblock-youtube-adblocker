@@ -66,6 +66,36 @@
       <label class="row"><input type="checkbox" id="enhHideDistractions" /><span>Hide distractions <small>end cards · live chat · paid banner</small></span></label>
       <label class="row"><input type="checkbox" id="enhRemaining" /><span>Show remaining time <small>rate-aware countdown</small></span></label>
       <label class="row"><input type="checkbox" id="enhShortsScroll" /><span>Shorts auto-scroll <small>next on ended</small></span></label>
+      <label class="row"><input type="checkbox" id="enhSeekButtons" /><span>Seek buttons <small><select id="enhSeekSecs" aria-label="Seek seconds">
+        <option value="5">±5s</option>
+        <option value="10" selected>±10s</option>
+        <option value="15">±15s</option>
+        <option value="30">±30s</option>
+      </select></small></span></label>
+      <label class="row"><input type="checkbox" id="enhSpeedButtons" /><span>Speed buttons <small>− / ＋ 0.25× steps</small></span></label>
+      <label class="row"><input type="checkbox" id="enhWheelVolume" /><span>Scroll-wheel volume <small>wheel over player</small></span></label>
+      <label class="row"><input type="checkbox" id="enhHideClutter" /><span>Hide feed clutter <small>posts · playlists · member-only · playables</small></span></label>
+      <label class="row"><input type="checkbox" id="enhPerRow" /><span>Videos per row <small><select id="enhPerRowValue" aria-label="Videos per row">
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4" selected>4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="8">8</option>
+      </select></small></span></label>
+      <label class="row"><input type="checkbox" id="enhLinkFix" /><span>Link + key fixes <small>unwrap redirects · strip trackers · block 0-9 seek</small></span></label>
+    </section>
+
+    <section class="group">
+      <h2 class="section-title">Themes <small>lite port · colors: RaitaroH DeepDark via <a href="https://github.com/YouTube-Enhancer/extension" target="_blank" rel="noopener">YouTube-Enhancer</a></small></h2>
+      <label class="row"><input type="checkbox" id="enhTheme" /><span>Dark theme <small><select id="enhThemePreset" aria-label="Theme preset">
+        <option value="deep-dark" selected>Deep-Dark</option>
+        <option value="dracula">Dracula</option>
+        <option value="mocha">Catppuccin-Mocha</option>
+        <option value="discord">Discord</option>
+        <option value="pure-black">Pure Black</option>
+      </select></small></span></label>
+      <label class="row"><input type="color" id="enhAccent" value="#00adee" /><span>Accent color <small>progress bar · links · buttons (empty = preset)</small></span></label>
     </section>
 
     <footer>

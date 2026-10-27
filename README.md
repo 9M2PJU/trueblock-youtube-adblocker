@@ -1,78 +1,106 @@
-# TrueBlock for YouTube — Ultimate Ad Blocker (Chrome MV3)
+<div align="center">
 
-> By **[9M2PJU](https://hamradio.my)** · Version 1.2.0 · Official repo: <https://github.com/9M2PJU/trueblock-youtube-adblocker>
+# ▶ TrueBlock for YouTube
 
-Ultra-fast, privacy-first YouTube ad blocker. No tracking, everything runs locally.
+**The ultra-fast, privacy-first YouTube ad blocker — now with 19 enhancements & 5 dark themes.**
 
-## What it blocks
+[![Version](https://img.shields.io/badge/version-1.3.0-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
+[![Chrome](https://img.shields.io/badge/Chrome-MV3-green?style=flat-square&logo=googlechrome)](https://github.com/9M2PJU/trueblock-youtube-adblocker)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
+[![No tracking](https://img.shields.io/badge/tracking-none-blue?style=flat-square)](#-privacy)
 
-- **Video ads:** pre-roll, mid-roll, post-roll, 6s bumpers, unskippable ads → auto-seek to end + auto-click Skip in ~50ms, muted + 16x so you never see/hear them
-- **Overlays & banners:** overlay popups, masthead, sidebar, display ads, companion ads
-- **Sponsored slots:** promoted videos, in-feed ads, sponsored Shorts (auto-advances)
-- **Ad beacons:** `googleads / doubleclick / googlesyndication / stats/ads / ptracking / get_midroll_` blocked at network layer (declarativeNetRequest) + XHR/fetch backstop
-- **Anti-adblock nag:** removes “Ad blockers are not allowed” dialog + backdrop and resumes playback
+*Skips video ads in ~50&nbsp;ms · kills banners, overlays & sponsored slots · bypasses anti-adblock walls — all running 100% locally.*
 
-## How it works (3 layers)
+[⬇️ Install](#-install-30-seconds) · [✨ Features](#-what-it-does) · [🎨 Themes](#-themes) · [🔒 Privacy](#-privacy) · [🙏 Credits](#-credits)
 
-1. `rules/block_ads.json` — MV3 `declarativeNetRequest` network blocking (fast, before request leaves browser)
-2. `src/inject.js` (MAIN world, `document_start`) — strips `adPlacements` / `playerAds` / `adSlots` from `ytInitialPlayerResponse` and `/youtubei/v1/player|next` JSON via `JSON.parse`, `fetch`, `XHR` patches
-3. `src/content.js` + `src/content.css` (ISOLATED world) — `requestAnimationFrame` ad-skipper, `MutationObserver` cosmetic cleaner, enforcement-dialog bypass, SPA-navigation handling
+</div>
 
-## Install (Load unpacked)
+---
 
-1. Open `chrome://extensions`
-2. Enable **Developer mode** (top right)
-3. Click **Load unpacked** → select this folder (`ytblockext`)
-4. Open YouTube — ads should skip instantly. Click the extension icon for toggles + counters.
+## 🚀 Install (30 seconds)
 
-## Test it
+1. Download the latest **`trueblock-youtube-adblocker.zip`** from [Releases](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases) and unzip it — or clone this repo.
+2. Open `chrome://extensions` in Chrome / Edge / Brave.
+3. Enable **Developer mode** (top-right toggle).
+4. Click **Load unpacked** and select the extension folder.
+5. Open YouTube. Pin 📌 TrueBlock to your toolbar for toggles & stats.
 
-- Watch any monetized video: ad frame should flash black for <100ms then jump to content
-- Check badge counter on extension icon increments
-- Popup lets you toggle: video ads / banners / sponsored / Shorts ads / anti-adblock bypass
+> Updates: repeat steps 1 + 4 (or `git pull` + click ⟳ Reload on the extension card).
 
-## Files
+---
+
+## 🛡️ What it does
+
+### Ad blocking — 3 layers
+
+| Layer | Where | What |
+|---|---|---|
+| **Network** | `rules/block_ads.json` | 15 MV3 `declarativeNetRequest` rules block `doubleclick`, `googlesyndication`, `googleadservices`, `stats/ads`, `ptracking`, `get_midroll_` before requests leave the browser |
+| **Player patch** | `src/inject.js` (MAIN world) | Strips `adPlacements` / `playerAds` / `adSlots` from `ytInitialPlayerResponse` and `/youtubei/v1/player` responses via `JSON.parse` + `fetch` + `XHR` hooks |
+| **Skip + clean** | `src/content.js` (ISOLATED world) | `requestAnimationFrame` skipper mutes + 16× + seeks ads to end, auto-clicks every Skip variant, removes banners/masthead/overlays/sponsored slots, kills the *“Ad blockers are not allowed”* wall and resumes playback |
+
+- Pre-roll · mid-roll · post-roll · 6s bumpers · unskippable ads → gone in a <100 ms black flash
+- Sidebar / masthead / overlay / companion / in-feed ads → removed
+- Sponsored Shorts → auto-skipped
+- Live badge counter on the toolbar icon + session/total stats in the popup
+
+### ✨ Enhancements (all optional, all off except volume-memory & continue-skip)
+
+| Group | Options |
+|---|---|
+| Playback | Auto theater · autoplay off (respects your clicks) · remember volume · remember speed · force quality 4K→360p · seek ±5–30 s buttons · speed −/+ buttons · scroll-wheel volume over player |
+| Uninterrupted | Skip *“Video paused. Continue watching?”* · Shorts auto-scroll |
+| Player tools | Loop toggle · copy timestamp link · screenshot frame → PNG |
+| Declutter | Hide Shorts everywhere · hide end cards / live chat / paid banner · hide posts, playlists, member-only, playables · videos-per-row 1–8 · unwrap redirect links + strip tracker params · block 0–9 key seeking |
+| Audio | Volume boost 150 / 200 / 300 % (WebAudio) |
+
+### 🎨 Themes
+
+Lite theme engine — force-dark + remap YouTube's variables, ~20 KB, no build step:
+
+- **5 presets**: Deep-Dark · Dracula · Catppuccin-Mocha · Discord · Pure Black
+- **Accent picker**: progress bar, links & buttons in any color (empty = preset default)
+
+> Preset colors adapted from RaitaroH's [YouTube-DeepDark](https://github.com/RaitaroH/YouTube-DeepDark). For the full 32-theme engine see [YouTube-Enhancer](https://github.com/YouTube-Enhancer/extension).
+
+---
+
+## 🗂️ Project layout
 
 ```
-manifest.json
-rules/block_ads.json
-src/inject.js     # MAIN-world player-response cleaner
-src/content.js    # ad skipper + DOM cleaner + anti-adblock
-src/enhancements.js # optional enhancements (theater, quality, volume…)
-src/content.css   # cosmetic hiding
-src/background.js # badge counter + stats
-src/popup.html/.css/.js
-icons/
+manifest.json          # MV3 manifest (min Chrome 116)
+rules/block_ads.json   # network blocklist (15 DNR rules)
+src/
+  inject.js            # MAIN-world player-response cleaner
+  content.js           # ad skipper + DOM cleaner + anti-adblock
+  enhancements.js      # 19 optional enhancements + themes (~30 KB vanilla JS)
+  content.css          # cosmetic ad hiding
+  background.js        # badge counter + stats
+  popup.html/.css/.js  # control panel + About dialog
+icons/                 # toolbar icons
 ```
 
-## Enhancements (ported ideas, lean native code)
+Zero dependencies. Zero build step. Just load the folder.
 
-Optional toggles in the popup, inspired by [YouTube-Enhancer/extension](https://github.com/YouTube-Enhancer/extension) (MIT) — re-implemented natively, no upstream code vendored, no build step added:
+---
 
-- Auto theater mode · Disable autoplay (respects your manual clicks)
-- Remember volume · Remember playback speed (never fights the ad-skipper)
-- Force quality (4K → 360p) · Skip “Video paused. Continue watching?”
-- Hide Shorts everywhere (home · search · sidebar · channel · watch-next)
-- Volume boost (150/200/300% via WebAudio gain)
-- Player buttons: loop toggle · copy timestamp link · screenshot frame to PNG
-- Hide distractions (end cards · live chat · paid-promo banner)
-- Remaining time (rate-aware countdown) · Shorts auto-scroll (next on ended)
+## 🔒 Privacy
 
-Credits: enhancement concepts by the YouTube-Enhancer contributors (MIT). See upstream repo for their full 69-feature suite.
+- **No servers, no analytics, no telemetry.** Everything runs on-device.
+- Settings live in `chrome.storage` only. Nothing ever leaves your browser.
+- Permissions are minimal: ad/tracker hosts + `declarativeNetRequest` + `storage`. No `<all_urls>`, no tab reading, no history access.
 
-## Privacy
+---
 
-No remote servers, no analytics, no data collection. Settings stored in `chrome.storage` only.
+## 🙏 Credits
 
-## About
+- Author & maintainer: **[9M2PJU](https://hamradio.my)** — <https://hamradio.my>
+- Enhancement concepts + theme colors: [YouTube-Enhancer/extension](https://github.com/YouTube-Enhancer/extension) (MIT) and RaitaroH's [YouTube-DeepDark](https://github.com/RaitaroH/YouTube-DeepDark) — re-implemented natively, no upstream code vendored.
+- License: [MIT](LICENSE). PRs welcome — especially updated selectors when YouTube moves things around (`SKIP_SELECTORS` in `src/content.js`).
 
-- Author: [9M2PJU](https://hamradio.my)
-- Website: <https://hamradio.my>
-- GitHub: <https://github.com/9M2PJU/trueblock-youtube-adblocker>
-- License: MIT — see [LICENSE](LICENSE)
+## 📝 Changelog
 
-## Notes
-
-- Manifest V3, min Chrome 116 (uses `world: MAIN` content scripts).
-- If YouTube changes selectors, update `SKIP_SELECTORS` / `BANNER_SELECTORS` in `src/content.js` and CSS.
-- Respect creators: consider YouTube Premium / whitelisting channels you love (per-channel whitelist is a good next feature).
+- **v1.3.0** — Lite themes (5 presets + accent) · seek/speed buttons · wheel volume · feed declutter · videos-per-row · link/key fixes
+- **v1.2.0** — 12-feature pack: Shorts hiding, volume boost, loop/timestamp/screenshot buttons, distractions filter, remaining time, Shorts auto-scroll
+- **v1.1.0** — First enhancement port: theater, autoplay-off, volume/speed memory, forced quality, continue-watching skip
+- **v1.0.0** — Core MV3 ad blocker + anti-adblock bypass + About dialog
