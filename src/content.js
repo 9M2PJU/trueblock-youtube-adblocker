@@ -71,7 +71,9 @@
   function skipVideoAds() {
     if (!settings.enabled || !settings.blockVideoAds) return;
     try {
-      const videos = document.querySelectorAll('video.video-stream.html5-main-video, video.html5-main-video');
+      // Single cheap gate for the whole 20Hz loop: no ad classes, no ad work.
+      const adActive = !!document.querySelector('.html5-video-player.ad-showing, .html5-video-player.ad-interrupting');
+      const videos = adActive ? document.querySelectorAll('video.video-stream.html5-main-video, video.html5-main-video') : [];
       let skipping = false;
       for (const video of videos) {
         const player = video.closest('.html5-video-player') || document.getElementById('movie_player');
@@ -95,8 +97,10 @@
           try { video.play().catch(() => {}); } catch {}
         } catch { /* never break playback */ }
       }
-      // Click skip / close buttons whenever they exist
-      if (clickIfPresent(SKIP_SELECTORS)) skipping = true;
+      // Click skip buttons only while an ad is actually showing (the 6-selector
+      // scan is the hottest cost in this 20Hz loop — gate it, not the videos).
+      // Overlay-close stays ungated: overlay ads show during normal playback.
+      if (adActive && clickIfPresent(SKIP_SELECTORS)) skipping = true;
       if (clickIfPresent(OVERLAY_CLOSE)) skipping = true;
 
       // Hide ad frame flash
