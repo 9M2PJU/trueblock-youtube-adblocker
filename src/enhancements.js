@@ -88,37 +88,68 @@
     } catch {}
   }
 
-  /* 2) Disable autoplay — click toggle off, respect real user clicks for the session */
+  /* 2) Disable autoplay — the toggle is the source of truth, both ways.
+   * ON: autoplay is forced off (your in-player clicks still win for the video).
+   * OFF: if WE turned it off, it is restored — unticking never strands you
+   * with a dead Up-Next. Manual player clicks always clear our claim. */
   let userChoseAutoplay = false;
   let lastAutoplayClick = 0;
+  let autoplayTouched = false;
   try {
     document.addEventListener('click', (e) => {
       try {
         if (e.isTrusted && e.target && e.target.closest && e.target.closest('.ytp-autonav-toggle')) {
           userChoseAutoplay = true;
+          autoplayTouched = false; // user's own click wins from here on
         }
       } catch {}
     }, true);
   } catch {}
+  function setAutoplayOff(toggle) {
+    if (toggle.style.display === 'none' || getComputedStyle(toggle).display === 'none') {
+      // Folded toggle is inert — use player API like upstream does
+      const p = player();
+      try {
+        if (p && typeof p.setAutonav === 'function') { p.setAutonav(false); autoplayTouched = true; return true; }
+        if (p && typeof p.setAutonavState === 'function') { p.setAutonavState(1); autoplayTouched = true; return true; }
+      } catch {}
+      return false;
+    }
+    lastAutoplayClick = Date.now();
+    toggle.click();
+    autoplayTouched = true;
+    return true;
+  }
+  function setAutoplayOn(toggle) {
+    if (toggle.style.display === 'none' || getComputedStyle(toggle).display === 'none') {
+      const p = player();
+      try {
+        if (p && typeof p.setAutonav === 'function') { p.setAutonav(true); return true; }
+        if (p && typeof p.setAutonavState === 'function') { p.setAutonavState(2); return true; }
+      } catch {}
+      return false;
+    }
+    lastAutoplayClick = Date.now();
+    toggle.click();
+    return true;
+  }
   function autoplaySweep() {
-    if (!on() || !s.enhAutoplayOff || !isWatch() || userChoseAutoplay) return;
+    if (!on() || !isWatch()) return;
     try {
       const toggle = document.querySelector('.ytp-autonav-toggle');
       if (!toggle) return;
       const checked = toggle.getAttribute('aria-checked') === 'true';
-      if (!checked) return;
-      if (Date.now() - lastAutoplayClick < 1000) return;
-      if (toggle.style.display === 'none' || getComputedStyle(toggle).display === 'none') {
-        // Folded toggle is inert — use player API like upstream does
-        const p = player();
-        try {
-          if (p && typeof p.setAutonav === 'function') { p.setAutonav(false); return; }
-          if (p && typeof p.setAutonavState === 'function') { p.setAutonavState(1); return; }
-        } catch {}
+      if (s.enhAutoplayOff && !userChoseAutoplay) {
+        if (!checked) return;
+        if (Date.now() - lastAutoplayClick < 1000) return;
+        setAutoplayOff(toggle);
         return;
       }
-      lastAutoplayClick = Date.now();
-      toggle.click();
+      // Setting off (or master off): restore only if we were the ones who killed it.
+      if (!s.enhAutoplayOff && autoplayTouched && !checked) {
+        if (Date.now() - lastAutoplayClick < 1000) return;
+        if (setAutoplayOn(toggle)) autoplayTouched = false;
+      }
     } catch {}
   }
 
