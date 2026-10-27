@@ -2,7 +2,7 @@
 
 # ▶ TrueBlock for YouTube
 
-**The ultra-fast, privacy-first YouTube ad blocker — now with SponsorBlock-style crowdsourced skips, 18 enhancements & 5 dark themes.**
+**The ultra-fast, privacy-first YouTube ad blocker — now with SponsorBlock-style crowdsourced skips, 19 enhancements & 5 dark themes.**
 
 [![Version](https://img.shields.io/badge/version-1.6.0-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
 [![Chrome](https://img.shields.io/badge/Chrome-MV3-green?style=flat-square&logo=googlechrome)](https://github.com/9M2PJU/trueblock-youtube-adblocker)
@@ -81,7 +81,7 @@ src/
   inject.js            # MAIN-world player-response cleaner
   content.js           # ad skipper + DOM cleaner + anti-adblock
   sponsorblock.js      # crowdsourced sponsor skipping, on by default (original API client)
-  enhancements.js      # 18 optional enhancements + v2 themes (~35 KB vanilla JS)
+  enhancements.js      # 19 optional enhancements + v2 themes (~35 KB vanilla JS)
   content.css          # cosmetic ad hiding
   background.js        # badge counter + stats
   popup.html/.css/.js  # control panel + About dialog
