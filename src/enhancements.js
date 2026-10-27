@@ -5,7 +5,13 @@
  * No upstream code is copied — only the same public DOM/player tricks:
  * theater via .ytp-size-button, autoplay via .ytp-autonav-toggle,
  * continue-watching via ytd-watch-flexy youthereDataChanged_ + confirm click,
- * quality via #movie_player.setPlaybackQualityRange, volume/speed via <video>.
+ * quality via #movie_player.setPlaybackQualityRange, volume/speed via <video>,
+ * hide-shorts via body-class CSS (same selectors as upstream index.css),
+ * remaining-time via span appended to .ytp-time-contents,
+ * shorts-autoscroll via ended -> #navigation-button-down click,
+ * loop via video.loop toggle, timestamp via youtu.be clipboard copy,
+ * screenshot via canvas drawImage + download, volume-boost via WebAudio gain,
+ * distractions via CSS (.ytp-ce-element, #chat, paid overlay).
  */
 (() => {
   'use strict';
@@ -20,7 +26,15 @@
     enhQuality: false,
     enhQualityValue: 'hd1080',
     enhSkipContinue: true,
-    enhRememberSpeed: false
+    enhRememberSpeed: false,
+    enhHideShorts: false,
+    enhVolumeBoost: false,
+    enhBoostValue: '2',
+    enhScreenshot: false,
+    enhPlayerButtons: false,
+    enhHideDistractions: false,
+    enhRemaining: false,
+    enhShortsScroll: false
   };
   let s = { ...DEFAULTS };
   try {
@@ -193,6 +207,242 @@
       qualitySweep();
       continueSweep();
       speedSweep();
+      shortsCssSweep();
+      distractionsCssSweep();
+      boostSweep();
+      buttonsSweep();
+      remainingSweep();
+      shortsScrollSweep();
+    } catch {}
+  }
+
+  /* 7) Hide Shorts everywhere — same selectors as upstream hideShorts/index.css */
+  const SHORTS_CSS = `
+html.tb-hide-shorts ytd-guide-entry-renderer:has(a[title="Shorts"]),
+html.tb-hide-shorts ytd-mini-guide-entry-renderer:has(a[title="Shorts"]){display:none!important}
+html.tb-hide-shorts ytd-browse[page-subtype="home"] ytd-rich-section-renderer:has([is-shorts]){display:none!important}
+html.tb-hide-shorts ytd-reel-shelf-renderer:has(#title-container),
+html.tb-hide-shorts ytd-rich-shelf-renderer:has([is-shorts]),
+html.tb-hide-shorts yt-tab-shape[tab-title="Shorts"]{display:none!important}
+html.tb-hide-shorts ytd-video-renderer:has([overlay-style="SHORTS"]){display:none!important}
+html.tb-hide-shorts ytd-watch-next-secondary-results-renderer ytd-reel-shelf-renderer:has(#title-container){display:none!important}
+html.tb-hide-shorts a[href^="/shorts/"].yt-simple-endpoint{pointer-events:none}`;
+  function shortsCssSweep() {
+    try {
+      const want = on() && s.enhHideShorts;
+      document.documentElement.classList.toggle('tb-hide-shorts', !!want);
+      let st = document.getElementById('tb-hide-shorts');
+      if (want && !st) {
+        st = document.createElement('style');
+        st.id = 'tb-hide-shorts';
+        st.textContent = SHORTS_CSS;
+        (document.head || document.documentElement).appendChild(st);
+      } else if (!want && st) {
+        st.remove();
+      }
+      if (want) {
+        for (const el of document.querySelectorAll('ytd-rich-shelf-renderer:has([is-shorts]), ytd-reel-shelf-renderer:has(#title-container)')) {
+          try {
+            const shelf = el.closest('ytd-rich-section-renderer, ytd-item-section-renderer');
+            (shelf || el).remove();
+          } catch {}
+        }
+      }
+    } catch {}
+  }
+
+  /* 8) Hide distractions — end cards, live chat, paid-promo banner */
+  const DISTRACT_CSS = `
+html.tb-hide-distract .ytp-ce-element,html.tb-hide-distract .ytp-ce-covering-overlay,
+html.tb-hide-distract .ytp-endscreen-content,html.tb-hide-distract .ytp-paid-content-overlay,
+html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:none!important}`;
+  function distractionsCssSweep() {
+    try {
+      const want = on() && s.enhHideDistractions;
+      document.documentElement.classList.toggle('tb-hide-distract', !!want);
+      let st = document.getElementById('tb-hide-distract');
+      if (want && !st) {
+        st = document.createElement('style');
+        st.id = 'tb-hide-distract';
+        st.textContent = DISTRACT_CSS;
+        (document.head || document.documentElement).appendChild(st);
+      } else if (!want && st) {
+        st.remove();
+      }
+    } catch {}
+  }
+
+  /* 9) Volume boost — WebAudio gain node per video element (fixed level from settings) */
+  const boostNodes = new WeakMap();
+  function boostSweep() {
+    try {
+      const v = document.querySelector('video.html5-main-video');
+      if (!v) return;
+      let e = boostNodes.get(v);
+      const want = on() && s.enhVolumeBoost ? parseFloat(s.enhBoostValue) || 2 : 1;
+      if (!e) {
+        if (want <= 1) return;
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        try {
+          const ctx = new AC();
+          const src = ctx.createMediaElementSource(v);
+          const gain = ctx.createGain();
+          src.connect(gain);
+          gain.connect(ctx.destination);
+          e = { ctx, gain };
+          boostNodes.set(v, e);
+        } catch { return; } // already routed (e.g. re-navigated element)
+      }
+      try {
+        if (e.ctx.state === 'suspended') e.ctx.resume().catch(() => {});
+        if (Math.abs(e.gain.gain.value - want) > 0.01) e.gain.gain.value = want;
+      } catch {}
+    } catch {}
+  }
+
+  /* 10) Player buttons — loop toggle, copy-timestamp, screenshot */
+  function toast(msg) {
+    try {
+      let t = document.getElementById('tb-toast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'tb-toast';
+        t.setAttribute('style', 'position:fixed;left:50%;bottom:64px;transform:translateX(-50%);background:rgba(0,0,0,.85);color:#fff;font:500 13px system-ui;padding:8px 14px;border-radius:8px;z-index:99999;pointer-events:none');
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.style.display = 'block';
+      clearTimeout(t.__tb_timer);
+      t.__tb_timer = setTimeout(() => { t.style.display = 'none'; }, 1600);
+    } catch {}
+  }
+  function mkBtn(id, glyph, title) {
+    const b = document.createElement('button');
+    b.id = id;
+    b.className = 'ytp-button tb-enh-btn';
+    b.title = title;
+    b.setAttribute('aria-label', title);
+    b.setAttribute('style', 'font-size:15px;width:36px;opacity:.9');
+    b.textContent = glyph;
+    b.addEventListener('click', (ev) => { ev.stopPropagation(); handleEnhBtn(id); });
+    return b;
+  }
+  function handleEnhBtn(id) {
+    try {
+      const v = document.querySelector('video.html5-main-video');
+      if (id === 'tb-btn-loop' && v) {
+        if (v.hasAttribute('loop')) { v.removeAttribute('loop'); toast('Loop off'); }
+        else { v.setAttribute('loop', ''); toast('Loop on'); }
+        syncLoopBtn();
+      } else if (id === 'tb-btn-stamp') {
+        if (!v) return;
+        const vid = new URLSearchParams(location.search).get('v') || '';
+        const t = Math.floor(v.currentTime);
+        const url = `https://youtu.be/${vid}?t=${t}s`;
+        try { navigator.clipboard.writeText(url).then(() => toast('Timestamp link copied'), () => toast(url)); }
+        catch { toast(url); }
+      } else if (id === 'tb-btn-shot') {
+        takeScreenshot(v);
+      }
+    } catch {}
+  }
+  function takeScreenshot(v) {
+    if (!v || !v.videoWidth) { toast('Video not ready'); return; }
+    try {
+      const c = document.createElement('canvas');
+      c.width = v.videoWidth;
+      c.height = v.videoHeight;
+      const ctx = c.getContext('2d');
+      if (!ctx) { toast('Screenshot failed'); return; }
+      ctx.drawImage(v, 0, 0, c.width, c.height);
+      c.toBlob((blob) => {
+        if (!blob) { toast('Screenshot blocked on this video'); return; }
+        try {
+          const vid = new URLSearchParams(location.search).get('v') || 'video';
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = `trueblock-${vid}-${Math.floor(v.currentTime)}s.png`;
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+          toast('Screenshot saved');
+        } catch { toast('Screenshot failed'); }
+      }, 'image/png');
+    } catch { toast('Screenshot blocked on this video'); }
+  }
+  function syncLoopBtn() {
+    try {
+      const v = document.querySelector('video.html5-main-video');
+      const b = document.getElementById('tb-btn-loop');
+      if (b && v) { b.style.opacity = v.hasAttribute('loop') ? '1' : '.9'; b.style.textShadow = v.hasAttribute('loop') ? '0 0 6px #3ea6ff' : 'none'; }
+    } catch {}
+  }
+  function buttonsSweep() {
+    try {
+      const want = on() && (s.enhPlayerButtons || s.enhScreenshot);
+      for (const id of ['tb-btn-loop', 'tb-btn-stamp', 'tb-btn-shot']) {
+        const el = document.getElementById(id);
+        if (el && !want) el.remove();
+      }
+      if (!want) return;
+      const bar = document.querySelector('.ytp-right-controls');
+      if (!bar) return;
+      const showLoopStamp = on() && s.enhPlayerButtons;
+      const showShot = on() && s.enhScreenshot;
+      if (showLoopStamp && !document.getElementById('tb-btn-loop')) bar.prepend(mkBtn('tb-btn-loop', '⟳', 'Loop video'));
+      if (showLoopStamp && !document.getElementById('tb-btn-stamp')) {
+        const loop = document.getElementById('tb-btn-loop');
+        (loop ? loop.after.bind(loop) : bar.prepend.bind(bar))(mkBtn('tb-btn-stamp', '🔗', 'Copy link with timestamp'));
+      }
+      if (showShot && !document.getElementById('tb-btn-shot')) bar.prepend(mkBtn('tb-btn-shot', '📷', 'Screenshot frame'));
+      if (!showLoopStamp) { document.getElementById('tb-btn-loop')?.remove(); document.getElementById('tb-btn-stamp')?.remove(); }
+      if (!showShot) document.getElementById('tb-btn-shot')?.remove();
+      syncLoopBtn();
+    } catch {}
+  }
+
+  /* 11) Remaining time — span in .ytp-time-contents, rate-aware like upstream */
+  function fmtTime(sec) {
+    sec = Math.max(0, Math.round(sec));
+    const d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60), x = sec % 60;
+    const parts = d ? [d, h, m, x] : h ? [h, m, x] : [m, x];
+    return parts.map((n, i) => i === 0 ? String(n) : String(n).padStart(2, '0')).join(':');
+  }
+  function remainingSweep() {
+    try {
+      const want = on() && s.enhRemaining;
+      let el = document.getElementById('tb-time-remaining');
+      if (!want) { el?.remove(); return; }
+      const box = document.querySelector('#movie_player .ytp-time-contents');
+      const v = document.querySelector('#movie_player video.html5-main-video');
+      if (!box || !v) return;
+      if (!el) {
+        el = document.createElement('span');
+        el.id = 'tb-time-remaining';
+        el.setAttribute('style', 'opacity:.85');
+        box.appendChild(el);
+      }
+      if (!Number.isFinite(v.duration) || !Number.isFinite(v.currentTime)) { el.textContent = ''; return; }
+      const left = (v.duration - v.currentTime) / (v.playbackRate || 1);
+      el.textContent = ` (-${fmtTime(left)})`;
+    } catch {}
+  }
+
+  /* 12) Shorts auto-scroll — advance on ended (upstream uses timeupdate; ended is cheaper) */
+  function shortsScrollSweep() {
+    try {
+      if (!on() || !s.enhShortsScroll || !location.pathname.startsWith('/shorts')) return;
+      const v = document.querySelector('ytd-reel-video-renderer[is-active] video, #shorts-player video');
+      if (!v || v.__tb_scrollHooked) return;
+      v.__tb_scrollHooked = true;
+      v.addEventListener('ended', () => {
+        try {
+          if (!on() || !s.enhShortsScroll) return;
+          if (v.hasAttribute('loop')) return;
+          const next = document.querySelector('#navigation-button-down button');
+          if (next) next.click();
+        } catch {}
+      });
     } catch {}
   }
 

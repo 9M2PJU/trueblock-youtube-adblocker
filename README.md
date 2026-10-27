@@ -1,6 +1,6 @@
 # TrueBlock for YouTube — Ultimate Ad Blocker (Chrome MV3)
 
-> By **[9M2PJU](https://hamradio.my)** · Version 1.1.0 · Official repo: <https://github.com/9M2PJU/trueblock-youtube-adblocker>
+> By **[9M2PJU](https://hamradio.my)** · Version 1.2.0 · Official repo: <https://github.com/9M2PJU/trueblock-youtube-adblocker>
 
 Ultra-fast, privacy-first YouTube ad blocker. No tracking, everything runs locally.
 
@@ -52,6 +52,11 @@ Optional toggles in the popup, inspired by [YouTube-Enhancer/extension](https://
 - Auto theater mode · Disable autoplay (respects your manual clicks)
 - Remember volume · Remember playback speed (never fights the ad-skipper)
 - Force quality (4K → 360p) · Skip “Video paused. Continue watching?”
+- Hide Shorts everywhere (home · search · sidebar · channel · watch-next)
+- Volume boost (150/200/300% via WebAudio gain)
+- Player buttons: loop toggle · copy timestamp link · screenshot frame to PNG
+- Hide distractions (end cards · live chat · paid-promo banner)
+- Remaining time (rate-aware countdown) · Shorts auto-scroll (next on ended)
 
 Credits: enhancement concepts by the YouTube-Enhancer contributors (MIT). See upstream repo for their full 69-feature suite.
 

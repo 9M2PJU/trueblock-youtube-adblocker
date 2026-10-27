@@ -11,7 +11,15 @@ const DEFAULTS = {
   enhQuality: false,
   enhQualityValue: 'hd1080',
   enhSkipContinue: true,
-  enhRememberSpeed: false
+  enhRememberSpeed: false,
+  enhHideShorts: false,
+  enhVolumeBoost: false,
+  enhBoostValue: '2',
+  enhScreenshot: false,
+  enhPlayerButtons: false,
+  enhHideDistractions: false,
+  enhRemaining: false,
+  enhShortsScroll: false
 };
 const ids = Object.keys(DEFAULTS);
 
