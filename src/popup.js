@@ -87,11 +87,12 @@ for (const id of ids) {
 // EQ panel: presets, preamp, Q, per-band sliders (audiophile 10-band)
 const EQ_TABLE = {
   flat: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  bass: [6, 5, 4, 2, 1, 0, 0, 0, 0, 0],
-  treble: [0, 0, 0, 0, 0, 1, 2, 3, 4, 5],
-  vocal: [-3, -2, 0, 2, 4, 4, 3, 1, 0, -1],
+  bass: [6, 6, 4, 0, -1, 0, 0, 0, 0, 0],
+  treble: [0, 0, 0, 0, 0, 0, 2, 3, 2, 1],
+  vocal: [-3, -2, -1, 1, 3, 4, 4, 2, -1, -1],
   vshape: [5, 4, 2, 0, -1, -2, -1, 1, 3, 5],
-  loudness: [4, 3, 2, 0, 0, 0, 0, 1, 2, 3]
+  loudness: [4, 3, 2, 0, 0, 0, 0, 1, 2, 3],
+  rock: [2, 4, 2, 3, 1, 0, 1, 4, 2, 1]
 };
 function paintEq(vals) {
   const gains = Array.isArray(vals.enhEqGains) && vals.enhEqGains.length === 10 ? vals.enhEqGains : EQ_TABLE.flat;

@@ -309,15 +309,21 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
     { type: 'peaking', freq: 2000 }, { type: 'peaking', freq: 4000 },
     { type: 'peaking', freq: 8000 }, { type: 'highshelf', freq: 16000 }
   ];
+  // Preset curves informed by SFX Engine's "7 Best Equalizer Settings for Music":
+  // V-shape compensates equal-loudness contours; vocal centers 2.5-3.5kHz presence
+  // with 100-250Hz de-mud and 6-8kHz de-ess; bass starts +3..+6dB at 60-120Hz with
+  // a 200-400Hz mud cut; treble stays subtle (+2..+4 presence, +1..+2 air);
+  // rock pushes 200-500Hz body + 3-5kHz bite. (Values adapted to our ISO bands.)
   const EQ_PRESETS = {
     flat: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    bass: [6, 5, 4, 2, 1, 0, 0, 0, 0, 0],
-    treble: [0, 0, 0, 0, 0, 1, 2, 3, 4, 5],
-    vocal: [-3, -2, 0, 2, 4, 4, 3, 1, 0, -1],
+    bass: [6, 6, 4, 0, -1, 0, 0, 0, 0, 0],
+    treble: [0, 0, 0, 0, 0, 0, 2, 3, 2, 1],
+    vocal: [-3, -2, -1, 1, 3, 4, 4, 2, -1, -1],
     vshape: [5, 4, 2, 0, -1, -2, -1, 1, 3, 5],
-    loudness: [4, 3, 2, 0, 0, 0, 0, 1, 2, 3]
+    loudness: [4, 3, 2, 0, 0, 0, 0, 1, 2, 3],
+    rock: [2, 4, 2, 3, 1, 0, 1, 4, 2, 1]
   };
-  const EQ_NAMES = { flat: 'Flat (neutral)', bass: 'Bass Boost', treble: 'Treble Boost', vocal: 'Vocal', vshape: 'V-Shape', loudness: 'Loudness', custom: 'Custom' };
+  const EQ_NAMES = { flat: 'Flat (neutral)', bass: 'Bass Boost', treble: 'Treble Boost', vocal: 'Vocal', vshape: 'V-Shape', loudness: 'Loudness', rock: 'Rock/Metal', custom: 'Custom' };
   let lastEqKey = '';
   let eqInit = false;
   let eqUnavailableToast = false;
@@ -327,7 +333,18 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
     if (s.enhEqPreset === 'custom' && Array.isArray(s.enhEqGains) && s.enhEqGains.length === 10) {
       return s.enhEqGains.map((x) => Math.min(12, Math.max(-12, +x || 0)));
     }
-    return EQ_PRESETS[s.enhEqPreset] || EQ_PRESETS.flat;
+    const base = EQ_PRESETS[s.enhEqPreset] || EQ_PRESETS.flat;
+    // Dynamic loudness (Fletcher-Munson, per SFX Engine): full curve when quiet,
+    // flattening to neutral at full volume — scaled from the live video volume.
+    if (s.enhEqPreset === 'loudness') {
+      try {
+        const vv = document.querySelector('video.html5-main-video');
+        const vol = vv && !vv.muted ? vv.volume : 1;
+        const k = Math.min(1, Math.max(0, 1 - vol * 1.1));
+        return base.map((x) => Math.round(x * k * 2) / 2);
+      } catch {}
+    }
+    return base;
   }
   function ensureAudioGraph(video) {
     let g = audioGraphs.get(video);
