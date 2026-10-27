@@ -361,6 +361,44 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
   let eqInit = false;
   let eqUnavailableToast = false;
   const audioGraphs = new WeakMap();
+  const audioCtxs = new Set();
+  /* Chrome autoplay policy: an AudioContext created (or resumed) before any
+   * user gesture starts 'suspended', and resume() outside a gesture logs
+   * "The AudioContext was not allowed to start..." (src/enhancements.js:461).
+   * Worse, routing the <video> through a suspended graph mutes it. So gate
+   * both graph creation and resume() on sticky user activation, and resume
+   * existing contexts from inside a real gesture handler. After the first
+   * gesture, sweep-driven resume() is allowed and warning-free. */
+  let audioUnlocked = false;
+  try { audioUnlocked = !!(navigator.userActivation && navigator.userActivation.hasBeenActive); } catch {}
+  function hasAudioGesture() {
+    try {
+      if (audioUnlocked) return true;
+      if (navigator.userActivation && navigator.userActivation.hasBeenActive) {
+        audioUnlocked = true;
+        return true;
+      }
+    } catch {}
+    return false;
+  }
+  function tryResumeAudio(g) {
+    try {
+      if (!g || !g.ctx || g.ctx.state !== 'suspended') return;
+      if (!hasAudioGesture()) return; // no sticky activation yet: stay quiet, no warning
+      g.ctx.resume().catch(() => {});
+    } catch {}
+  }
+  function unlockAudio() {
+    audioUnlocked = true;
+    for (const ctx of audioCtxs) {
+      try { if (ctx.state === 'suspended') ctx.resume().catch(() => {}); } catch {}
+    }
+  }
+  try {
+    for (const ev of ['pointerdown', 'keydown', 'touchend', 'click']) {
+      document.addEventListener(ev, unlockAudio, { capture: true, passive: true });
+    }
+  } catch {}
   function eqGains() {
     if (!(on() && s.enhEQ)) return EQ_PRESETS.flat;
     if (s.enhEqPreset === 'custom' && Array.isArray(s.enhEqGains) && s.enhEqGains.length === 10) {
@@ -382,6 +420,9 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
   function ensureAudioGraph(video) {
     let g = audioGraphs.get(video);
     if (g) return g;
+    // Defer creation until a user gesture: routing audio through a suspended
+    // context would mute the video until unlock, and resume() would warn.
+    if (!hasAudioGesture()) return null;
     try {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return null;
@@ -419,6 +460,7 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
       analyser.connect(ctx.destination);
       g = { ctx, pre, filters, gain, comp, analyser };
       audioGraphs.set(video, g);
+      try { audioCtxs.add(ctx); } catch {}
     } catch {
       return null; // already routed / unsupported — leave element alone
     }
@@ -433,7 +475,7 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
       const g = ensureAudioGraph(v);
       if (!g) return;
       try {
-        if (g.ctx.state === 'suspended') g.ctx.resume().catch(() => {});
+        tryResumeAudio(g);
         if (Math.abs(g.gain.gain.value - want) > 0.01) g.gain.gain.value = want;
       } catch {}
     } catch {}
@@ -454,11 +496,12 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
       if (!active && !audioGraphs.get(v)) { lastEqKey = key; eqInit = true; return; }
       const g = ensureAudioGraph(v);
       if (!g) {
-        if (!eqUnavailableToast) { eqUnavailableToast = true; toast('Equalizer unavailable in this browser'); }
+        // Pre-gesture deferral is normal — stay silent until unlock.
+        if (hasAudioGesture() && !eqUnavailableToast) { eqUnavailableToast = true; toast('Equalizer unavailable in this browser'); }
         return;
       }
       try {
-        if (g.ctx.state === 'suspended') g.ctx.resume().catch(() => {});
+        tryResumeAudio(g);
         const t = g.ctx.currentTime;
         if (Math.abs(g.pre.gain.value - preGain) > 0.005) g.pre.gain.setTargetAtTime(preGain, t, 0.03);
         for (let i = 0; i < 10; i++) {
@@ -493,7 +536,7 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
       if (!g) return;
       const wantOn = on() && s.enhLimiter;
       try {
-        if (g.ctx.state === 'suspended') g.ctx.resume().catch(() => {});
+        tryResumeAudio(g);
         const t = g.ctx.currentTime;
         const th = wantOn ? -3 : 0, ra = wantOn ? 20 : 1;
         if (Math.abs(g.comp.threshold.value - th) > 0.01) g.comp.threshold.setTargetAtTime(th, t, 0.03);

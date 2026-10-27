@@ -4,7 +4,7 @@
 
 **Adblock, Sponsor Skip & Enhancer — ultra-fast, privacy-first, 100% local.**
 
-[![Version](https://img.shields.io/badge/version-1.9.10-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
+[![Version](https://img.shields.io/badge/version-1.9.11-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
 [![Chrome](https://img.shields.io/badge/Chrome-MV3-green?style=flat-square&logo=googlechrome)](https://github.com/9M2PJU/trueblock-youtube-adblocker)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-yellow?style=flat-square)](LICENSE)
 [![No tracking](https://img.shields.io/badge/tracking-none-blue?style=flat-square)](#-privacy)
@@ -124,6 +124,7 @@ Free forever, no ads, no tracking. If TrueBlock saves your sanity, chip in:
 
 ## 📝 Changelog
 
+- **v1.9.11** — Fix "AudioContext was not allowed to start" warning: EQ/boost/limiter graph now waits for first user gesture; no more pre-gesture resume, no muted-audio window
 - **v1.9.10** — Reverted one-time autoplay heal (no 1.9.5 users exist to rescue; touch-tracking restore stands)
 - **v1.9.9** — Store-submission build (per-browser manifests via build.sh)
 - **v1.9.8** — Firefox-ready: gecko ID + data disclosure, background scripts fallback, 45-char name, `web-ext lint` clean
