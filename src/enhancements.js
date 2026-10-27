@@ -95,14 +95,6 @@
   let userChoseAutoplay = false;
   let lastAutoplayClick = 0;
   let autoplayTouched = false;
-  // One-time heal (v1.9.10): older TrueBlock could strand autoplay OFF with no
-  // record of having done so. On first run, if the setting is off, the user
-  // hasn't chosen, and the toggle reads off — force it back on once, then
-  // never again (manual choices stay sovereign via autoplayTouched).
-  let autoplayHealed = null;
-  try {
-    chrome.storage.local.get({ tbAutoplayFix: false }, (v) => { autoplayHealed = !!v.tbAutoplayFix; });
-  } catch { autoplayHealed = true; }
   try {
     document.addEventListener('click', (e) => {
       try {
@@ -157,15 +149,6 @@
       if (!s.enhAutoplayOff && autoplayTouched && !checked) {
         if (Date.now() - lastAutoplayClick < 1000) return;
         if (setAutoplayOn(toggle)) autoplayTouched = false;
-        return;
-      }
-      // One-time heal for pre-1.9.5 strandings: default state is ON.
-      if (!s.enhAutoplayOff && !userChoseAutoplay && !checked && autoplayHealed === false) {
-        if (Date.now() - lastAutoplayClick < 1000) return;
-        if (setAutoplayOn(toggle)) {
-          autoplayHealed = true;
-          try { chrome.storage.local.set({ tbAutoplayFix: true }); } catch {}
-        }
       }
     } catch {}
   }

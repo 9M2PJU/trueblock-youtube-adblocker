@@ -124,7 +124,7 @@ Free forever, no ads, no tracking. If TrueBlock saves your sanity, chip in:
 
 ## 📝 Changelog
 
-- **v1.9.10** — Autoplay on by default: one-time heal restores Up-Next for anyone stranded OFF by older versions, then never touches it again
+- **v1.9.10** — Reverted one-time autoplay heal (no 1.9.5 users exist to rescue; touch-tracking restore stands)
 - **v1.9.9** — Store-submission build (per-browser manifests via build.sh)
 - **v1.9.8** — Firefox-ready: gecko ID + data disclosure, background scripts fallback, 45-char name, `web-ext lint` clean
 - **v1.9.7** — Toolbar icon reframed edge-to-edge (reads bigger next to other extensions)
