@@ -14,7 +14,8 @@
       "data_collection_permissions": {
         "required": ["websiteActivity", "websiteContent"]
       }
-    }
+    },
+    "gecko_android": {}
   },
   "icons": {
     "16": "icons/icon16.png",
