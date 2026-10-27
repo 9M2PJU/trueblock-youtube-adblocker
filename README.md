@@ -19,8 +19,8 @@
 
 ## 🚀 Install (30 seconds)
 
-1. Download the latest **`trueblock-youtube-adblocker.zip`** from [Releases](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases) and unzip it — or clone this repo.
-2. Open `chrome://extensions` in Chrome / Edge / Brave.
+1. Download your build from [Releases](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases) and unzip it — **TrueBlock-Chrome.zip** for Chrome / Edge / Brave, **TrueBlock-Firefox.zip** for Firefox — or clone this repo.
+2. Open `chrome://extensions` in Chrome / Edge / Brave (`about:debugging` → *Load Temporary Add-on* in Firefox).
 3. Enable **Developer mode** (top-right toggle).
 4. Click **Load unpacked** and select the extension folder.
 5. Open YouTube. Pin 📌 TrueBlock to your toolbar for toggles & stats.
@@ -51,7 +51,7 @@ Same codebase, verified with Mozilla's `web-ext lint` (0 errors). Two things cha
 - Sponsored Shorts → auto-skipped
 - Live badge counter on the toolbar icon + session/total stats in the popup
 
-### ✨ Enhancements (all optional, all off except volume-memory & continue-skip)
+### ✨ Enhancements (all optional — on by default: volume memory, limiter, continue-skip, sponsor skip)
 
 | Group | Options |
 |---|---|
@@ -59,7 +59,7 @@ Same codebase, verified with Mozilla's `web-ext lint` (0 errors). Two things cha
 | Uninterrupted | Skip *“Video paused. Continue watching?”* · Shorts auto-scroll |
 | Player tools | Loop toggle · copy timestamp link · screenshot frame → PNG |
 | Declutter | Hide Shorts everywhere · hide end cards / live chat / paid banner · hide posts, playlists, member-only, playables · videos-per-row 1–8 · unwrap redirect links + strip tracker params · block 0–9 key seeking |
-| Audio | Volume boost 150 / 200 / 300 % · **audiophile 10-band EQ** (ISO bands, preamp with auto-clip-guard, global Q, 6 presets + full custom sliders) · **limiter** (−3dB/20:1 safety net) · **spectrum overlay** (live analyzer), one shared WebAudio graph |
+| Audio | Volume boost 150 / 200 / 300 % · **audiophile 10-band EQ** (ISO bands, preamp with auto-clip-guard, global Q, 7 presets + full custom sliders) · **limiter** (−3dB/20:1 safety net) · **spectrum overlay** (live analyzer), one shared WebAudio graph |
 
 ### 🤝 SponsorBlock (crowdsourced, on by default)
 
@@ -88,7 +88,7 @@ src/
   inject.js            # MAIN-world player-response cleaner
   content.js           # ad skipper + DOM cleaner + anti-adblock
   sponsorblock.js      # crowdsourced sponsor skipping, on by default (original API client)
-  enhancements.js      # 19 optional enhancements + v2 themes (~35 KB vanilla JS)
+  enhancements.js      # 22 optional enhancements + v2 themes (~40 KB vanilla JS)
   content.css          # cosmetic ad hiding
   background.js        # badge counter + stats
   popup.html/.css/.js  # control panel + About dialog
@@ -107,11 +107,9 @@ Zero dependencies. Zero build step. Just load the folder.
 
 ---
 
-## 🙏 Credits
+## 🙏 Credits & ☕ Support
 
-## ☕ Support TrueBlock
-
-Free forever, no ads, no tracking. If it saves your sanity, chip in:
+Free forever, no ads, no tracking. If TrueBlock saves your sanity, chip in:
 
 [![PayPal](https://img.shields.io/badge/PayPal-9M2PJU-0070ba?style=flat-square&logo=paypal)](https://paypal.me/9M2PJU)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_a_Coffee-9m2pju-ff813f?style=flat-square&logo=buymeacoffee)](https://buymeacoffee.com/9m2pju)
