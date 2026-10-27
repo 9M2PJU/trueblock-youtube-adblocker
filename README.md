@@ -4,7 +4,7 @@
 
 **The ultra-fast, privacy-first YouTube ad blocker — now with SponsorBlock-style crowdsourced skips, 19 enhancements & 5 dark themes.**
 
-[![Version](https://img.shields.io/badge/version-1.5.1-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
+[![Version](https://img.shields.io/badge/version-1.5.2-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
 [![Chrome](https://img.shields.io/badge/Chrome-MV3-green?style=flat-square&logo=googlechrome)](https://github.com/9M2PJU/trueblock-youtube-adblocker)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-yellow?style=flat-square)](LICENSE)
 [![No tracking](https://img.shields.io/badge/tracking-none-blue?style=flat-square)](#-privacy)
@@ -60,6 +60,7 @@ Skips **in-video** sponsor reads, intros, outros and more using the community da
 
 - 8 categories: sponsor · intro · outro · subscribe-reminder · self-promo · off-topic music · recap/preview · filler (skip-type segments only)
 - Auto-skips with a toast (`Skipped sponsor (12s) · via SponsorBlock`), per-video cache, never fights the ad-skipper, fails open offline
+- Fetched through the background worker: page-origin requests are CORS-blocked by the API, the worker's host permission is not
 
 > Privacy note: this sends the current **video ID** to `sponsor.ajayyy.com` to fetch segments (untick to disable). Everything else in TrueBlock stays fully local.
 
@@ -119,6 +120,7 @@ Free forever, no ads, no tracking. If it saves your sanity, chip in:
 
 ## 📝 Changelog
 
+- **v1.5.2** — SponsorBlock CORS fix: API fetched via background worker
 - **v1.5.1** — Theme reliability: higher-specificity selectors, instant apply on setting change, toast confirmation, popup dropdowns no longer risk unticking their row
 - **v1.5.0** — SponsorBlock on by default · donate buttons (PayPal · Coffee · Wise) + GitHub FUNDING.yml
 - **v1.4.0** — SponsorBlock-style crowdsourced skips (8 categories, opt-in, original API client)

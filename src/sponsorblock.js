@@ -14,7 +14,7 @@
   if (window.__trueblock_sb) return;
   window.__trueblock_sb = true;
 
-  const API = 'https://sponsor.ajayyy.com/api/skipSegments';
+  // Endpoint (fetched by the background worker): https://sponsor.ajayyy.com/api/skipSegments
   const CATS = ['sponsor', 'intro', 'outro', 'interaction', 'selfpromo', 'music_offtopic', 'preview', 'filler'];
   const LABELS = {
     sponsor: 'sponsor', intro: 'intro', outro: 'outro', interaction: 'reminder to subscribe',
@@ -72,23 +72,19 @@
   async function fetchSegs(id) {
     const cats = enabledCats();
     if (!cats.length) return [];
-    const url = `${API}?videoID=${encodeURIComponent(id)}&categories=${encodeURIComponent(JSON.stringify(cats))}&actionTypes=${encodeURIComponent(JSON.stringify(['skip']))}`;
-    const ctl = new AbortController();
-    const timer = setTimeout(() => ctl.abort(), 8000);
+    // NOTE: fetched via the background worker (CORS: page-origin fetch is blocked
+    // by the API's CORS policy; the worker's host permission bypasses it).
     try {
-      const res = await fetch(url, { signal: ctl.signal });
-      if (res.status === 404) return []; // no segments submitted for this video
-      if (!res.ok) return [];
-      const data = await res.json();
-      if (!Array.isArray(data)) return [];
-      return data
-        .filter((d) => d && Array.isArray(d.segment) && Number.isFinite(d.segment[0]) && Number.isFinite(d.segment[1]))
-        .map((d) => ({ cat: d.category, start: d.segment[0], end: d.segment[1] }))
+      const res = await Promise.race([
+        chrome.runtime.sendMessage({ type: 'tb-sb-fetch', videoID: id, categories: cats }),
+        new Promise((resolve) => setTimeout(() => resolve(null), 10000))
+      ]);
+      if (!res || !Array.isArray(res.segs)) return [];
+      return res.segs
+        .filter((g) => g && Number.isFinite(g.start) && Number.isFinite(g.end))
         .sort((a, b) => a.start - b.start);
     } catch {
-      return []; // offline / DNS / CORS — fail open, never break playback
-    } finally {
-      clearTimeout(timer);
+      return []; // worker unreachable — fail open, never break playback
     }
   }
 
