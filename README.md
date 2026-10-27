@@ -4,7 +4,7 @@
 
 **Adblock, Sponsor Skip & Enhancer — ultra-fast, privacy-first, 100% local.**
 
-[![Version](https://img.shields.io/badge/version-1.9.7-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
+[![Version](https://img.shields.io/badge/version-1.9.8-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
 [![Chrome](https://img.shields.io/badge/Chrome-MV3-green?style=flat-square&logo=googlechrome)](https://github.com/9M2PJU/trueblock-youtube-adblocker)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-yellow?style=flat-square)](LICENSE)
 [![No tracking](https://img.shields.io/badge/tracking-none-blue?style=flat-square)](#-privacy)
@@ -26,6 +26,13 @@
 5. Open YouTube. Pin 📌 TrueBlock to your toolbar for toggles & stats.
 
 > Updates: repeat steps 1 + 4 (or `git pull` + click ⟳ Reload on the extension card).
+
+### Firefox 🦊
+
+Same codebase, verified with Mozilla's `web-ext lint` (0 errors). Two things changed for Firefox: the display name is capped at 45 chars (AMO rule), and the background lists both `service_worker` (Chromium) and `scripts` (Firefox fallback) — either browser ignores the key it doesn't need.
+
+- **Try it now:** `about:debugging#/runtime/this-firefox` → *Load Temporary Add-on* → pick `manifest.json` (lasts until browser restart).
+- **Proper release:** needs signing at [addons.mozilla.org](https://addons.mozilla.org/developers/) (free account → Submit → automated checks + human review, usually days). `web-ext build` + `web-ext sign --api-key=… --api-secret=…`. Note AMO will see the honest data-use disclosure (watched video IDs go to SponsorBlock's API).
 
 ---
 
@@ -119,6 +126,7 @@ Free forever, no ads, no tracking. If it saves your sanity, chip in:
 
 ## 📝 Changelog
 
+- **v1.9.8** — Firefox-ready: gecko ID + data disclosure, background scripts fallback, 45-char name, `web-ext lint` clean
 - **v1.9.7** — Toolbar icon reframed edge-to-edge (reads bigger next to other extensions)
 - **v1.9.6** — New official art: blue-shield logo (extension icons rebuilt) + banner hero in README
 - **v1.9.5** — Autoplay toggle is bidirectional: unticking restores Up-Next (tracked touch, manual clicks always win)
