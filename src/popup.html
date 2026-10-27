@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TrueBlock for YouTube</title>
+<link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">▶</div>
+      <div>
+        <h1>TrueBlock <span>for YouTube</span></h1>
+        <p class="sub">Ultimate ad blocker</p>
+      </div>
+      <label class="switch" title="Enable / disable">
+        <input type="checkbox" id="enabled" checked />
+        <span class="slider"></span>
+      </label>
+    </header>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="num" id="sessionCount">0</div>
+        <div class="lbl">blocked this session</div>
+      </div>
+      <div class="stat">
+        <div class="num" id="totalCount">0</div>
+        <div class="lbl">blocked total</div>
+      </div>
+      <div class="stat status" id="statusPill">Active</div>
+    </div>
+
+    <section class="group">
+      <label class="row"><input type="checkbox" id="blockVideoAds" checked /><span>Skip video ads <small>pre-roll · mid-roll · post-roll · bumpers</small></span></label>
+      <label class="row"><input type="checkbox" id="blockBanners" checked /><span>Remove banners & overlays <small>masthead · sidebar · overlay</small></span></label>
+      <label class="row"><input type="checkbox" id="blockSponsored" checked /><span>Remove sponsored slots <small>promoted videos · in-feed</small></span></label>
+      <label class="row"><input type="checkbox" id="blockShortsAds" checked /><span>Skip sponsored Shorts</span></label>
+      <label class="row"><input type="checkbox" id="antiAdblock" checked /><span>Anti-adblock bypass <small>“Ad blockers are not allowed”</small></span></label>
+    </section>
+
+    <footer>
+      <button id="resetBtn" class="ghost">Reset counter</button>
+      <a href="https://www.youtube.com" target="_blank" rel="noopener" class="cta">Open YouTube</a>
+    </footer>
+    <button id="aboutBtn" class="about-btn" aria-haspopup="dialog">ⓘ About</button>
+    <div id="aboutDialog" class="about-backdrop" hidden>
+      <div class="about-card" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+        <h2 id="aboutTitle">TrueBlock for YouTube</h2>
+        <p class="about-ver">Version <span id="aboutVersion">1.0.0</span></p>
+        <p class="about-desc">Ultra-fast, privacy-first YouTube ad blocker.</p>
+        <dl class="about-list">
+          <div><dt>Author</dt><dd><a href="https://hamradio.my" target="_blank" rel="noopener">9M2PJU</a></dd></div>
+          <div><dt>Website</dt><dd><a href="https://hamradio.my" target="_blank" rel="noopener">https://hamradio.my</a></dd></div>
+          <div><dt>GitHub</dt><dd><a id="aboutRepo" href="https://github.com/9M2PJU/trueblock-youtube-adblocker" target="_blank" rel="noopener">9M2PJU/trueblock-youtube-adblocker</a></dd></div>
+        </dl>
+        <button id="aboutClose" class="cta about-close">Close</button>
+      </div>
+    </div>
+    <p class="privacy">100% local · no tracking · no data leaves your browser</p>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
