@@ -304,9 +304,6 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
    * source -> preamp -> 10 biquads -> boost gain -> limiter -> analyser -> out.
    * The analyser is a pass-through tap feeding the spectrum overlay.
    * Disabled stages sit neutral so toggling never rebuilds mid-playback. */
-   * ISO 10-band layout (lowshelf / 8x peaking / highshelf), global Q,
-   * preamp auto-set to -peak on preset pick (clip-free boosting, like
-   * EqualizerAPO/Peace). setTargetAtTime ramps kill zipper noise. */
   const EQ_BANDS = [
     { type: 'lowshelf', freq: 31 }, { type: 'peaking', freq: 62 },
     { type: 'peaking', freq: 125 }, { type: 'peaking', freq: 250 },
