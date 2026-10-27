@@ -4,7 +4,14 @@ const DEFAULTS = {
   blockBanners: true,
   blockSponsored: true,
   blockShortsAds: true,
-  antiAdblock: true
+  antiAdblock: true,
+  enhTheater: false,
+  enhAutoplayOff: false,
+  enhRememberVolume: true,
+  enhQuality: false,
+  enhQualityValue: 'hd1080',
+  enhSkipContinue: true,
+  enhRememberSpeed: false
 };
 const ids = Object.keys(DEFAULTS);
 
@@ -12,7 +19,9 @@ async function load() {
   const vals = await chrome.storage.sync.get(DEFAULTS);
   for (const id of ids) {
     const el = document.getElementById(id);
-    if (el) el.checked = !!vals[id];
+    if (!el) continue;
+    if (el.tagName === 'SELECT') el.value = vals[id];
+    else el.checked = !!vals[id];
   }
   refreshStats();
   refreshPill(vals.enabled);
@@ -39,8 +48,10 @@ async function refreshStats() {
 
 for (const id of ids) {
   document.getElementById(id)?.addEventListener('change', async (e) => {
-    await chrome.storage.sync.set({ [id]: e.target.checked });
-    if (id === 'enabled') refreshPill(e.target.checked);
+    const el = e.target;
+    const val = el.tagName === 'SELECT' ? el.value : el.checked;
+    await chrome.storage.sync.set({ [id]: val });
+    if (id === 'enabled') refreshPill(el.checked);
   });
 }
 

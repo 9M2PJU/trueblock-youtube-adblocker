@@ -23,6 +23,10 @@ h1 span { font-weight: 400; opacity: .7; }
 .row { display: flex; gap: 10px; align-items: flex-start; padding: 8px; border-radius: 10px; background: rgba(127,127,127,.1); cursor: pointer; font-size: 13px; font-weight: 600; }
 .row small { display: block; font-weight: 400; opacity: .6; }
 .row input { margin-top: 2px; accent-color: #e62117; width: 16px; height: 16px; }
+.row select { margin-top: 4px; accent-color: #e62117; border-radius: 6px; padding: 2px 4px; }
+.section-title { font-size: 12px; margin: 12px 2px 2px; text-transform: uppercase; letter-spacing: .04em; opacity: .7; }
+.section-title small { text-transform: none; letter-spacing: 0; font-weight: 400; }
+.section-title a { color: #e62117; }
 footer { display: flex; gap: 8px; }
 .ghost { flex: 1; border: 1px solid rgba(127,127,127,.4); background: transparent; border-radius: 10px; padding: 8px; cursor: pointer; }
 .cta { flex: 2; text-align: center; background: #e62117; color: #fff; text-decoration: none; border-radius: 10px; padding: 8px; font-weight: 700; }

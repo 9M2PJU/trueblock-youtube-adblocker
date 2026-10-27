@@ -40,6 +40,23 @@
       <label class="row"><input type="checkbox" id="antiAdblock" checked /><span>Anti-adblock bypass <small>“Ad blockers are not allowed”</small></span></label>
     </section>
 
+    <section class="group">
+      <h2 class="section-title">Enhancements <small>ported ideas from <a href="https://github.com/YouTube-Enhancer/extension" target="_blank" rel="noopener">YouTube-Enhancer</a></small></h2>
+      <label class="row"><input type="checkbox" id="enhTheater" /><span>Auto theater mode</span></label>
+      <label class="row"><input type="checkbox" id="enhAutoplayOff" /><span>Disable autoplay</span></label>
+      <label class="row"><input type="checkbox" id="enhRememberVolume" checked /><span>Remember volume</span></label>
+      <label class="row"><input type="checkbox" id="enhSkipContinue" checked /><span>Skip “Continue watching?” pause</span></label>
+      <label class="row"><input type="checkbox" id="enhRememberSpeed" /><span>Remember playback speed</span></label>
+      <label class="row"><input type="checkbox" id="enhQuality" /><span>Force quality <small><select id="enhQualityValue" aria-label="Preferred quality">
+        <option value="hd2160">2160p 4K</option>
+        <option value="hd1440">1440p</option>
+        <option value="hd1080" selected>1080p</option>
+        <option value="hd720">720p</option>
+        <option value="large">480p</option>
+        <option value="medium">360p</option>
+      </select></small></span></label>
+    </section>
+
     <footer>
       <button id="resetBtn" class="ghost">Reset counter</button>
       <a href="https://www.youtube.com" target="_blank" rel="noopener" class="cta">Open YouTube</a>
