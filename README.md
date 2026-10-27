@@ -4,7 +4,7 @@
 
 **Adblock, Sponsor Skip & Enhancer — ultra-fast, privacy-first, 100% local.**
 
-[![Version](https://img.shields.io/badge/version-1.9.0-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
+[![Version](https://img.shields.io/badge/version-1.9.1-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
 [![Chrome](https://img.shields.io/badge/Chrome-MV3-green?style=flat-square&logo=googlechrome)](https://github.com/9M2PJU/trueblock-youtube-adblocker)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-yellow?style=flat-square)](LICENSE)
 [![No tracking](https://img.shields.io/badge/tracking-none-blue?style=flat-square)](#-privacy)
@@ -119,6 +119,7 @@ Free forever, no ads, no tracking. If it saves your sanity, chip in:
 
 ## 📝 Changelog
 
+- **v1.9.1** — Audit fixes: no more double-start counter inflation, no synthetic-ended playlist skips, absolute share links keep their origin, EQ toasts stop spamming on loudness+volume, XHR backstop arg fix, player-response seeding
 - **v1.9.0** — Limiter safety net + live spectrum overlay on the player
 - **v1.8.2** — Rebranded descriptor: Adblock, Sponsor Skip & Enhancer (name now matches scope)
 - **v1.8.1** — EQ curves retuned per SFX Engine guide (de-mud, de-ess, sane treble) + Rock/Metal preset + dynamic loudness that flattens as volume rises

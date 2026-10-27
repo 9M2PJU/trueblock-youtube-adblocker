@@ -148,8 +148,9 @@
         const u = String(url);
         if (u.includes('/api/stats/ads') || u.includes('/pagead/') || u.includes('/ptracking') || u.includes('doubleclick.net') || u.includes('/get_midroll_')) {
           this.__tb_blocked = true;
-          // redirect to a harmless same-origin no-op to avoid player errors
-          return origOpen2.call(this, 'GET', 'about:blank', ...rest.slice(2));
+          // redirect to a harmless same-origin no-op (keep trailing args intact
+          // so the async flag stays correct), only swapping method + URL
+          return origOpen2.call(this, 'GET', 'about:blank', ...rest);
         }
       } catch { /* ignore */ }
       return origOpen2.call(this, method, url, ...rest);
@@ -167,8 +168,11 @@
   scrubGlobals();
   document.addEventListener('DOMContentLoaded', scrubGlobals, { once: true });
 
-  // 5) Neutralize YouTube's adblock-detection config flags where present
+  // 5) Neutralize YouTube's adblock-detection config flags where present.
+  // Seed from any value already assigned — replacing the property must not
+  // lose the current player response for page scripts reading it.
   try {
+    const existing = window.ytInitialPlayerResponse;
     Object.defineProperty(window, 'ytInitialPlayerResponse', {
       configurable: true,
       enumerable: true,
@@ -178,6 +182,10 @@
         catch { this.__tb_playerResponse = v; }
       }
     });
+    if (existing !== undefined) {
+      try { window.ytInitialPlayerResponse = cleanPlayerResponse(existing); }
+      catch { try { window.__tb_playerResponse = existing; } catch {} }
+    }
   } catch {
     // property may be non-configurable on some navigations; scrubGlobals covers it
   }

@@ -414,7 +414,9 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
       const preDb = enabled ? (Math.min(6, Math.max(-12, +s.enhEqPreamp || 0))) : 0;
       const q = { narrow: 2, normal: 1, wide: 0.5 }[s.enhEqQ] || 1;
       const preGain = Math.pow(10, preDb / 20);
-      const key = `${enabled}|${s.enhEqPreset}|${gains.join(',')}|${preDb}|${q}`;
+      // Key excludes live gains: dynamic loudness reshapes them on every volume
+      // step, which must not re-toast (filters still follow every sweep).
+      const key = `${enabled}|${s.enhEqPreset}|${preDb}|${q}`;
       const v = document.querySelector('video.html5-main-video');
       if (!v) return;
       const active = enabled && (gains.some((d) => d !== 0) || preDb !== 0);
@@ -836,7 +838,9 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
           const u = new URL(href, location.origin);
           u.searchParams.delete('si');
           u.searchParams.delete('feature');
-          a.setAttribute('href', u.pathname + u.search + u.hash);
+          // Keep absolute URLs absolute — pathname-only would break youtu.be links.
+          const isAbs = /^[a-z][a-z0-9+.-]*:\/\//i.test(href);
+          a.setAttribute('href', isAbs ? u.href : u.pathname + u.search + u.hash);
         } catch {}
       }
     } catch {}

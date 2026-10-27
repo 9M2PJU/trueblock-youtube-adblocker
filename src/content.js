@@ -43,12 +43,6 @@
     '.ytp-ad-overlay-close-button-modern',
     'button.ytp-ad-button'
   ];
-  const AD_PLAYER_SELECTORS = [
-    '.html5-video-player.ad-showing',
-    '.html5-video-player.ad-interrupting',
-    '#player-ads',
-    '.ytp-ad-player-overlay'
-  ];
 
   function clickIfPresent(selectors) {
     for (const sel of selectors) {
@@ -88,17 +82,15 @@
           video.muted = true;
           video.volume = 0;
           try { video.playbackRate = 16; } catch { try { video.playbackRate = 8; } catch {} }
-          // Seek to end — this ends >95% of pre/mid/post-rolls instantly
+          // Seek to end — this ends >95% of pre/mid/post-rolls instantly.
+          // (No synthetic 'ended' dispatch: reaching duration fires it natively,
+          // and a fake one can double-advance playlists.)
           const dur = video.duration;
           if (Number.isFinite(dur) && dur > 0) {
             if (video.currentTime < dur - 0.15) {
               try { video.currentTime = dur - 0.05; } catch {}
               try { video.currentTime = dur; } catch {}
             }
-          }
-          // Fire ended event as a backstop for players waiting on it
-          if (video.currentTime >= (dur || 0) - 0.2) {
-            try { video.dispatchEvent(new Event('ended')); } catch {}
           }
           try { video.play().catch(() => {}); } catch {}
         } catch { /* never break playback */ }
@@ -114,12 +106,7 @@
       if (skipping) {
         try {
           const mp = document.getElementById('movie_player');
-          if (mp) {
-            if (typeof mp.skipAd === 'function') { try { mp.skipAd(); } catch {} }
-            else if (typeof mp.nextVideo === 'function' && mp.classList && mp.classList.contains('ad-interrupting') && mp.getDuration && mp.getCurrentTime) {
-              // do NOT auto-next real content; only used when duration is an ad stub
-            }
-          }
+          if (mp && typeof mp.skipAd === 'function') { try { mp.skipAd(); } catch {} }
         } catch {}
         reportBlocked(1);
       }
@@ -161,7 +148,6 @@
       // Sponsored Shorts: auto-advance past "Sponsored" shorts
       if (settings.blockShortsAds && location.pathname.startsWith('/shorts')) {
         try {
-          const badge = document.querySelector('ytd-reel-video-renderer[is-active] [class*="sponsor"], ytd-reel-video-renderer[is-active] span:has(+ *)');
           const active = document.querySelector('ytd-reel-video-renderer[is-active]');
           if (active && /sponsored/i.test(active.textContent.slice(0, 500))) {
             const nextBtn = document.querySelector('#navigation-button-down button, ytd-shorts #navigation-button-down button');
@@ -240,6 +226,8 @@
   }
 
   function start() {
+    if (start.done) return;
+    start.done = true;
     try {
       skipVideoAds();
       removeBanners(document);
