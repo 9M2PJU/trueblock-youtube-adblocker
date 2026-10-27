@@ -4,7 +4,7 @@
 
 **The ultra-fast, privacy-first YouTube ad blocker — now with SponsorBlock-style crowdsourced skips & 18 enhancements.**
 
-[![Version](https://img.shields.io/badge/version-1.5.3-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
+[![Version](https://img.shields.io/badge/version-1.5.4-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
 [![Chrome](https://img.shields.io/badge/Chrome-MV3-green?style=flat-square&logo=googlechrome)](https://github.com/9M2PJU/trueblock-youtube-adblocker)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-yellow?style=flat-square)](LICENSE)
 [![No tracking](https://img.shields.io/badge/tracking-none-blue?style=flat-square)](#-privacy)
@@ -111,6 +111,7 @@ Free forever, no ads, no tracking. If it saves your sanity, chip in:
 
 ## 📝 Changelog
 
+- **v1.5.4** — Unticking theater/autoplay-style modes now reverts YouTube back out (one-shot revert, no more stuck states)
 - **v1.5.3** — Removed broken themes (use YouTube's native appearance settings)
 - **v1.5.2** — SponsorBlock CORS fix: API fetched via background worker
 - **v1.5.1** — Theme reliability: higher-specificity selectors, instant apply on setting change, toast confirmation, popup dropdowns no longer risk unticking their row

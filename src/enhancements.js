@@ -60,17 +60,38 @@
     return !!grid && grid.hasAttribute('theater');
   };
 
-  /* 1) Automatic theater mode — click .ytp-size-button, throttled 1s like upstream */
+  /* 1) Automatic theater mode — click .ytp-size-button, throttled 1s like upstream.
+   * Untick (or master off) triggers a one-shot revert back out of theater. */
   let lastTheaterClick = 0;
+  let theaterWasOn = false;
+  let theaterRevertTries = 0;
   function theaterSweep() {
-    if (!on() || !s.enhTheater || !isWatch()) return;
+    if (!isWatch()) { theaterRevertTries = 0; return; }
+    const wantOn = on() && s.enhTheater;
+    if (wantOn) {
+      theaterWasOn = true;
+      theaterRevertTries = 0;
+      try {
+        if (isTheater()) return;
+        if (Date.now() - lastTheaterClick < 1000) return;
+        const btn = document.querySelector('button.ytp-size-button');
+        if (!btn || btn.offsetParent === null) return;
+        lastTheaterClick = Date.now();
+        btn.click();
+      } catch {}
+      return;
+    }
+    // Setting just turned off: exit theater we put it in (a few retries, then give up).
+    if (theaterWasOn) { theaterWasOn = false; theaterRevertTries = 5; }
+    if (theaterRevertTries <= 0) return;
     try {
-      if (isTheater()) return;
+      if (!isTheater()) { theaterRevertTries = 0; return; }
       if (Date.now() - lastTheaterClick < 1000) return;
       const btn = document.querySelector('button.ytp-size-button');
       if (!btn || btn.offsetParent === null) return;
       lastTheaterClick = Date.now();
       btn.click();
+      theaterRevertTries--;
     } catch {}
   }
 
