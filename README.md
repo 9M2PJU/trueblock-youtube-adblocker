@@ -4,7 +4,7 @@
 
 **The ultra-fast, privacy-first YouTube ad blocker — now with SponsorBlock-style crowdsourced skips, 19 enhancements & 5 dark themes.**
 
-[![Version](https://img.shields.io/badge/version-1.7.1-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
+[![Version](https://img.shields.io/badge/version-1.8.0-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
 [![Chrome](https://img.shields.io/badge/Chrome-MV3-green?style=flat-square&logo=googlechrome)](https://github.com/9M2PJU/trueblock-youtube-adblocker)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-yellow?style=flat-square)](LICENSE)
 [![No tracking](https://img.shields.io/badge/tracking-none-blue?style=flat-square)](#-privacy)
@@ -52,7 +52,7 @@
 | Uninterrupted | Skip *“Video paused. Continue watching?”* · Shorts auto-scroll |
 | Player tools | Loop toggle · copy timestamp link · screenshot frame → PNG |
 | Declutter | Hide Shorts everywhere · hide end cards / live chat / paid banner · hide posts, playlists, member-only, playables · videos-per-row 1–8 · unwrap redirect links + strip tracker params · block 0–9 key seeking |
-| Audio | Volume boost 150 / 200 / 300 % · 6-band equalizer (Flat / Bass / Treble / Vocal / V-Shape), shared WebAudio graph |
+| Audio | Volume boost 150 / 200 / 300 % · **audiophile 10-band EQ** (ISO bands, preamp with auto-clip-guard, global Q, 6 presets + full custom sliders), shared WebAudio graph |
 
 ### 🤝 SponsorBlock (crowdsourced, on by default)
 
@@ -118,6 +118,7 @@ Free forever, no ads, no tracking. If it saves your sanity, chip in:
 
 ## 📝 Changelog
 
+- **v1.8.0** — Audiophile EQ: 10 ISO bands, preamp with auto clip-guard, global Q, 6 presets + custom sliders
 - **v1.7.1** — EQ self-reports: toasts preset/±dB on change, warns if Flat-neutral, suspended-audio, or unsupported
 - **v1.7.0** — 6-band equalizer (5 presets) sharing one WebAudio graph with volume boost
 - **v1.6.0** — Themes v2: rebuilt with outside-label controls, Pure Black default, bidirectional enforcement, container fallbacks, read-back self-check + toasts

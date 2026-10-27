@@ -17,6 +17,9 @@ const DEFAULTS = {
   enhBoostValue: '2',
   enhEQ: false,
   enhEqPreset: 'flat',
+  enhEqGains: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  enhEqPreamp: '0',
+  enhEqQ: 'normal',
   enhScreenshot: false,
   enhPlayerButtons: false,
   enhHideDistractions: false,
@@ -50,6 +53,7 @@ async function load() {
   }
   refreshStats();
   refreshPill(vals.enabled);
+  paintEq(vals);
 }
 
 function refreshPill(enabled) {
@@ -79,6 +83,56 @@ for (const id of ids) {
     if (id === 'enabled') refreshPill(el.checked);
   });
 }
+
+// EQ panel: presets, preamp, Q, per-band sliders (audiophile 10-band)
+const EQ_TABLE = {
+  flat: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  bass: [6, 5, 4, 2, 1, 0, 0, 0, 0, 0],
+  treble: [0, 0, 0, 0, 0, 1, 2, 3, 4, 5],
+  vocal: [-3, -2, 0, 2, 4, 4, 3, 1, 0, -1],
+  vshape: [5, 4, 2, 0, -1, -2, -1, 1, 3, 5],
+  loudness: [4, 3, 2, 0, 0, 0, 0, 1, 2, 3]
+};
+function paintEq(vals) {
+  const gains = Array.isArray(vals.enhEqGains) && vals.enhEqGains.length === 10 ? vals.enhEqGains : EQ_TABLE.flat;
+  document.querySelectorAll('.eqband').forEach((sl) => {
+    const i = +sl.dataset.i;
+    sl.value = gains[i] ?? 0;
+    const b = sl.parentElement.querySelector('b');
+    if (b) b.textContent = (+sl.value > 0 ? '+' : '') + sl.value;
+  });
+  const pre = document.getElementById('enhEqPreamp');
+  if (pre) {
+    pre.value = vals.enhEqPreamp ?? '0';
+    const pv = document.getElementById('enhEqPreampVal');
+    if (pv) pv.textContent = ((+pre.value > 0 ? '+' : '') + pre.value) + 'dB';
+  }
+}
+document.getElementById('enhEqPreset')?.addEventListener('change', async (e) => {
+  const name = e.target.value;
+  if (name !== 'custom' && EQ_TABLE[name]) {
+    const gains = [...EQ_TABLE[name]];
+    // Auto-preamp: cut by the peak boost so presets never clip (audiophile rule).
+    const preamp = String(-Math.max(0, ...gains));
+    await chrome.storage.sync.set({ enhEqGains: gains, enhEqPreamp: preamp });
+    paintEq({ enhEqGains: gains, enhEqPreamp: preamp });
+  }
+});
+document.querySelectorAll('.eqband').forEach((sl) => {
+  sl.addEventListener('input', async () => {
+    const b = sl.parentElement.querySelector('b');
+    if (b) b.textContent = (+sl.value > 0 ? '+' : '') + sl.value;
+    const gains = [...document.querySelectorAll('.eqband')].map((x) => +x.value);
+    await chrome.storage.sync.set({ enhEqGains: gains, enhEqPreset: 'custom' });
+    const sel = document.getElementById('enhEqPreset');
+    if (sel) sel.value = 'custom';
+  });
+});
+document.getElementById('enhEqPreamp')?.addEventListener('input', async (e) => {
+  const pv = document.getElementById('enhEqPreampVal');
+  if (pv) pv.textContent = ((+e.target.value > 0 ? '+' : '') + e.target.value) + 'dB';
+  await chrome.storage.sync.set({ enhEqPreamp: e.target.value });
+});
 
 document.getElementById('resetBtn')?.addEventListener('click', async () => {
   try { await chrome.runtime.sendMessage({ type: 'tb-reset-session' }); } catch {}

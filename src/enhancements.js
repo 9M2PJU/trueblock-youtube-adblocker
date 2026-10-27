@@ -30,6 +30,9 @@
     enhBoostValue: '2',
     enhEQ: false,
     enhEqPreset: 'flat',
+    enhEqGains: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    enhEqPreamp: '0',
+    enhEqQ: 'normal',
     enhScreenshot: false,
     enhPlayerButtons: false,
     enhHideDistractions: false,
@@ -292,28 +295,40 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
     } catch {}
   }
 
-  /* 9) Unified WebAudio graph — 6-band EQ + volume boost per video element.
-   * One MediaElementSource per element (creating two breaks audio), chain:
-   * source -> 6 biquads -> boost gain -> destination. Disabled stages sit at
-   * neutral (0 dB / 1x) so toggling never rebuilds the graph mid-playback.
-   * Band layout is standard graphic-EQ practice (lowshelf/peaking/highshelf). */
+  /* 9) Unified WebAudio graph — 10-band audiophile EQ + volume boost, one graph
+   * per video element (a second MediaElementSource would break audio), chain:
+   * source -> preamp -> 10 biquads -> boost gain -> destination.
+   * Disabled stages sit neutral so toggling never rebuilds mid-playback.
+   * ISO 10-band layout (lowshelf / 8x peaking / highshelf), global Q,
+   * preamp auto-set to -peak on preset pick (clip-free boosting, like
+   * EqualizerAPO/Peace). setTargetAtTime ramps kill zipper noise. */
   const EQ_BANDS = [
-    { type: 'lowshelf', freq: 60 }, { type: 'peaking', freq: 250 },
-    { type: 'peaking', freq: 1000 }, { type: 'peaking', freq: 4000 },
+    { type: 'lowshelf', freq: 31 }, { type: 'peaking', freq: 62 },
+    { type: 'peaking', freq: 125 }, { type: 'peaking', freq: 250 },
+    { type: 'peaking', freq: 500 }, { type: 'peaking', freq: 1000 },
+    { type: 'peaking', freq: 2000 }, { type: 'peaking', freq: 4000 },
     { type: 'peaking', freq: 8000 }, { type: 'highshelf', freq: 16000 }
   ];
   const EQ_PRESETS = {
-    flat: [0, 0, 0, 0, 0, 0],
-    bass: [7, 4, 1, 0, 0, 0],
-    treble: [0, 0, 0, 2, 4, 6],
-    vocal: [-2, 0, 3, 4, 2, 0],
-    vshape: [5, 2, -2, 0, 3, 5]
+    flat: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    bass: [6, 5, 4, 2, 1, 0, 0, 0, 0, 0],
+    treble: [0, 0, 0, 0, 0, 1, 2, 3, 4, 5],
+    vocal: [-3, -2, 0, 2, 4, 4, 3, 1, 0, -1],
+    vshape: [5, 4, 2, 0, -1, -2, -1, 1, 3, 5],
+    loudness: [4, 3, 2, 0, 0, 0, 0, 1, 2, 3]
   };
-  const EQ_NAMES = { flat: 'Flat (neutral)', bass: 'Bass Boost', treble: 'Treble Boost', vocal: 'Vocal', vshape: 'V-Shape' };
+  const EQ_NAMES = { flat: 'Flat (neutral)', bass: 'Bass Boost', treble: 'Treble Boost', vocal: 'Vocal', vshape: 'V-Shape', loudness: 'Loudness', custom: 'Custom' };
   let lastEqKey = '';
   let eqInit = false;
   let eqUnavailableToast = false;
   const audioGraphs = new WeakMap();
+  function eqGains() {
+    if (!(on() && s.enhEQ)) return EQ_PRESETS.flat;
+    if (s.enhEqPreset === 'custom' && Array.isArray(s.enhEqGains) && s.enhEqGains.length === 10) {
+      return s.enhEqGains.map((x) => Math.min(12, Math.max(-12, +x || 0)));
+    }
+    return EQ_PRESETS[s.enhEqPreset] || EQ_PRESETS.flat;
+  }
   function ensureAudioGraph(video) {
     let g = audioGraphs.get(video);
     if (g) return g;
@@ -322,6 +337,8 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
       if (!AC) return null;
       const ctx = new AC();
       const src = ctx.createMediaElementSource(video);
+      const pre = ctx.createGain();
+      pre.gain.value = 1;
       const filters = EQ_BANDS.map((b) => {
         const f = ctx.createBiquadFilter();
         f.type = b.type;
@@ -333,10 +350,11 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
       const gain = ctx.createGain();
       gain.gain.value = 1;
       let node = src;
+      node.connect(pre); node = pre;
       for (const f of filters) { node.connect(f); node = f; }
       node.connect(gain);
       gain.connect(ctx.destination);
-      g = { ctx, filters, gain };
+      g = { ctx, pre, filters, gain };
       audioGraphs.set(video, g);
     } catch {
       return null; // already routed / unsupported — leave element alone
@@ -360,11 +378,14 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
   function eqSweep() {
     try {
       const enabled = on() && s.enhEQ;
-      const gains = enabled ? (EQ_PRESETS[s.enhEqPreset] || EQ_PRESETS.flat) : EQ_PRESETS.flat;
-      const key = `${enabled}|${s.enhEqPreset}`;
+      const gains = eqGains();
+      const preDb = enabled ? (Math.min(6, Math.max(-12, +s.enhEqPreamp || 0))) : 0;
+      const q = { narrow: 2, normal: 1, wide: 0.5 }[s.enhEqQ] || 1;
+      const preGain = Math.pow(10, preDb / 20);
+      const key = `${enabled}|${s.enhEqPreset}|${gains.join(',')}|${preDb}|${q}`;
       const v = document.querySelector('video.html5-main-video');
       if (!v) return;
-      const active = gains.some((d) => d !== 0);
+      const active = enabled && (gains.some((d) => d !== 0) || preDb !== 0);
       if (!active && !audioGraphs.get(v)) { lastEqKey = key; eqInit = true; return; }
       const g = ensureAudioGraph(v);
       if (!g) {
@@ -373,10 +394,13 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
       }
       try {
         if (g.ctx.state === 'suspended') g.ctx.resume().catch(() => {});
-        for (let i = 0; i < 6; i++) {
+        const t = g.ctx.currentTime;
+        if (Math.abs(g.pre.gain.value - preGain) > 0.005) g.pre.gain.setTargetAtTime(preGain, t, 0.03);
+        for (let i = 0; i < 10; i++) {
           if (Math.abs(g.filters[i].gain.value - gains[i]) > 0.01) {
-            g.filters[i].gain.setTargetAtTime(gains[i], g.ctx.currentTime, 0.03);
+            g.filters[i].gain.setTargetAtTime(gains[i], t, 0.03);
           }
+          if (Math.abs(g.filters[i].Q.value - q) > 0.01) g.filters[i].Q.setTargetAtTime(q, t, 0.03);
         }
         // Self-report on user-driven changes (silent on page load).
         if (key !== lastEqKey) {
@@ -385,9 +409,9 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
           eqInit = true;
           if (!first && enabled) {
             const peak = Math.max(...gains.map(Math.abs));
-            let msg = peak === 0
+            let msg = peak === 0 && preDb === 0
               ? `EQ on (${EQ_NAMES[s.enhEqPreset] || 'Flat'} = neutral — pick Bass/V-Shape to hear it)`
-              : `EQ: ${EQ_NAMES[s.enhEqPreset] || s.enhEqPreset} (±${peak} dB)`;
+              : `EQ: ${EQ_NAMES[s.enhEqPreset] || s.enhEqPreset} (±${peak} dB, pre ${preDb >= 0 ? '+' : ''}${preDb} dB)`;
             if (g.ctx.state === 'suspended') msg += ' — tap page once to unlock audio';
             toast(msg);
           }

@@ -32,6 +32,12 @@ div.row input[type="checkbox"] { margin-top: 2px; accent-color: #e62117; width: 
 .catgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
 .cat { display: flex; gap: 6px; align-items: center; font-size: 12px; font-weight: 600; background: rgba(127,127,127,.1); border-radius: 8px; padding: 6px 8px; cursor: pointer; }
 .cat input { accent-color: #e62117; }
+.eqpanel { display: grid; gap: 3px; margin: 6px 0 2px; padding: 8px; border-radius: 10px; background: rgba(127,127,127,.1); }
+.eqrow { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; }
+.eqrow span { width: 44px; opacity: .7; }
+.eqrow input[type="range"] { flex: 1; accent-color: #e62117; height: 18px; }
+.eqrow select { border-radius: 6px; padding: 2px 4px; }
+.eqrow b { width: 44px; text-align: right; font-variant-numeric: tabular-nums; }
 footer { display: flex; gap: 8px; }
 .ghost { flex: 1; border: 1px solid rgba(127,127,127,.4); background: transparent; border-radius: 10px; padding: 8px; cursor: pointer; }
 .cta { flex: 2; text-align: center; background: #e62117; color: #fff; text-decoration: none; border-radius: 10px; padding: 8px; font-weight: 700; }

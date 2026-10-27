@@ -61,13 +61,29 @@
         <option value="2" selected>200%</option>
         <option value="3">300%</option>
       </select></div>
-      <div class="row"><input type="checkbox" id="enhEQ" /><label for="enhEQ" class="grow">Equalizer <small>6-band · shares the volume-boost audio graph</small></label><select id="enhEqPreset" aria-label="EQ preset">
+      <div class="row"><input type="checkbox" id="enhEQ" /><label for="enhEQ" class="grow">Equalizer <small>10-band audiophile · preamp · Q</small></label><select id="enhEqPreset" aria-label="EQ preset">
         <option value="flat" selected>Flat</option>
         <option value="bass">Bass Boost</option>
         <option value="treble">Treble Boost</option>
         <option value="vocal">Vocal</option>
         <option value="vshape">V-Shape</option>
+        <option value="loudness">Loudness</option>
+        <option value="custom">Custom</option>
       </select></div>
+      <div class="eqpanel" id="eqPanel">
+        <div class="eqrow"><span>Preamp</span><input type="range" id="enhEqPreamp" min="-12" max="6" step="0.5" value="0" /><b id="enhEqPreampVal">0dB</b></div>
+        <div class="eqrow"><span>Q width</span><select id="enhEqQ" aria-label="Filter Q"><option value="wide">Wide (0.5)</option><option value="normal" selected>Normal (1.0)</option><option value="narrow">Narrow (2.0)</option></select><b></b></div>
+        <div class="eqrow"><span>31</span><input type="range" class="eqband" data-i="0" min="-12" max="12" step="0.5" value="0" /><b>0</b></div>
+        <div class="eqrow"><span>62</span><input type="range" class="eqband" data-i="1" min="-12" max="12" step="0.5" value="0" /><b>0</b></div>
+        <div class="eqrow"><span>125</span><input type="range" class="eqband" data-i="2" min="-12" max="12" step="0.5" value="0" /><b>0</b></div>
+        <div class="eqrow"><span>250</span><input type="range" class="eqband" data-i="3" min="-12" max="12" step="0.5" value="0" /><b>0</b></div>
+        <div class="eqrow"><span>500</span><input type="range" class="eqband" data-i="4" min="-12" max="12" step="0.5" value="0" /><b>0</b></div>
+        <div class="eqrow"><span>1k</span><input type="range" class="eqband" data-i="5" min="-12" max="12" step="0.5" value="0" /><b>0</b></div>
+        <div class="eqrow"><span>2k</span><input type="range" class="eqband" data-i="6" min="-12" max="12" step="0.5" value="0" /><b>0</b></div>
+        <div class="eqrow"><span>4k</span><input type="range" class="eqband" data-i="7" min="-12" max="12" step="0.5" value="0" /><b>0</b></div>
+        <div class="eqrow"><span>8k</span><input type="range" class="eqband" data-i="8" min="-12" max="12" step="0.5" value="0" /><b>0</b></div>
+        <div class="eqrow"><span>16k</span><input type="range" class="eqband" data-i="9" min="-12" max="12" step="0.5" value="0" /><b>0</b></div>
+      </div>
       <label class="row"><input type="checkbox" id="enhPlayerButtons" /><span>Player buttons <small>loop · copy timestamp link</small></span></label>
       <label class="row"><input type="checkbox" id="enhScreenshot" /><span>Screenshot button <small>save frame as PNG</small></span></label>
       <label class="row"><input type="checkbox" id="enhHideDistractions" /><span>Hide distractions <small>end cards · live chat · paid banner</small></span></label>
