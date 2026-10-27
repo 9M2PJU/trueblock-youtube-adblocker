@@ -106,5 +106,11 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') aboutDialog?.setAttribute('hidden', '');
 });
 
+// Guard: selects / color pickers nested in row labels must not toggle the checkbox
+document.querySelectorAll('label.row select, label.row input[type="color"]').forEach((el) => {
+  el.addEventListener('mousedown', (e) => e.stopPropagation());
+  el.addEventListener('click', (e) => e.stopPropagation());
+});
+
 setInterval(refreshStats, 1000);
 load();
