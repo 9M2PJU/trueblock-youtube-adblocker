@@ -863,7 +863,12 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
       if (!href) return;
       if (href.includes('/redirect?')) {
         const m = href.match(/[?&]q=([^&]+)/);
-        if (m) a.setAttribute('href', decodeURIComponent(m[1]));
+        if (m) {
+          const target = decodeURIComponent(m[1]);
+          // Never upgrade a link into script execution.
+          if (/^javascript:/i.test(target.trim())) return;
+          a.setAttribute('href', target);
+        }
       } else if (/[?&](si|feature)=/.test(href)) {
         try {
           const u = new URL(href, location.origin);
