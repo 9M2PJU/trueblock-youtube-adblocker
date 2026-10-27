@@ -30,7 +30,10 @@ const DEFAULTS = {
   enhHideClutter: false,
   enhPerRow: false,
   enhPerRowValue: '4',
-  enhLinkFix: false
+  enhLinkFix: false,
+  sbEnabled: false,
+  sbSponsor: true, sbIntro: true, sbOutro: true, sbInteraction: false,
+  sbSelfpromo: false, sbMusicOfftopic: false, sbPreview: false, sbFiller: false
 };
 const ids = Object.keys(DEFAULTS);
 

@@ -27,6 +27,9 @@ h1 span { font-weight: 400; opacity: .7; }
 .section-title { font-size: 12px; margin: 12px 2px 2px; text-transform: uppercase; letter-spacing: .04em; opacity: .7; }
 .section-title small { text-transform: none; letter-spacing: 0; font-weight: 400; }
 .section-title a { color: #e62117; }
+.catgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
+.cat { display: flex; gap: 6px; align-items: center; font-size: 12px; font-weight: 600; background: rgba(127,127,127,.1); border-radius: 8px; padding: 6px 8px; cursor: pointer; }
+.cat input { accent-color: #e62117; }
 footer { display: flex; gap: 8px; }
 .ghost { flex: 1; border: 1px solid rgba(127,127,127,.4); background: transparent; border-radius: 10px; padding: 8px; cursor: pointer; }
 .cta { flex: 2; text-align: center; background: #e62117; color: #fff; text-decoration: none; border-radius: 10px; padding: 8px; font-weight: 700; }

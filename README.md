@@ -2,11 +2,11 @@
 
 # ▶ TrueBlock for YouTube
 
-**The ultra-fast, privacy-first YouTube ad blocker — now with 19 enhancements & 5 dark themes.**
+**The ultra-fast, privacy-first YouTube ad blocker — now with SponsorBlock-style crowdsourced skips, 19 enhancements & 5 dark themes.**
 
-[![Version](https://img.shields.io/badge/version-1.3.0-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
+[![Version](https://img.shields.io/badge/version-1.4.0-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
 [![Chrome](https://img.shields.io/badge/Chrome-MV3-green?style=flat-square&logo=googlechrome)](https://github.com/9M2PJU/trueblock-youtube-adblocker)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-yellow?style=flat-square)](LICENSE)
 [![No tracking](https://img.shields.io/badge/tracking-none-blue?style=flat-square)](#-privacy)
 
 *Skips video ads in ~50&nbsp;ms · kills banners, overlays & sponsored slots · bypasses anti-adblock walls — all running 100% locally.*
@@ -54,6 +54,15 @@
 | Declutter | Hide Shorts everywhere · hide end cards / live chat / paid banner · hide posts, playlists, member-only, playables · videos-per-row 1–8 · unwrap redirect links + strip tracker params · block 0–9 key seeking |
 | Audio | Volume boost 150 / 200 / 300 % (WebAudio) |
 
+### 🤝 SponsorBlock (crowdsourced, opt-in, off by default)
+
+Skips **in-video** sponsor reads, intros, outros and more using the community database — clean-room client of the public read API, no SponsorBlock code vendored:
+
+- 8 categories: sponsor · intro · outro · subscribe-reminder · self-promo · off-topic music · recap/preview · filler (skip-type segments only)
+- Auto-skips with a toast (`Skipped sponsor (12s) · via SponsorBlock`), per-video cache, never fights the ad-skipper, fails open offline
+
+> Privacy note: enabling this sends the current **video ID** to `sponsor.ajayyy.com` to fetch segments. Everything else in TrueBlock stays fully local.
+
 ### 🎨 Themes
 
 Lite theme engine — force-dark + remap YouTube's variables, ~20 KB, no build step:
@@ -73,6 +82,7 @@ rules/block_ads.json   # network blocklist (15 DNR rules)
 src/
   inject.js            # MAIN-world player-response cleaner
   content.js           # ad skipper + DOM cleaner + anti-adblock
+  sponsorblock.js      # opt-in crowdsourced sponsor skipping (original API client)
   enhancements.js      # 19 optional enhancements + themes (~30 KB vanilla JS)
   content.css          # cosmetic ad hiding
   background.js        # badge counter + stats
@@ -86,7 +96,7 @@ Zero dependencies. Zero build step. Just load the folder.
 
 ## 🔒 Privacy
 
-- **No servers, no analytics, no telemetry.** Everything runs on-device.
+- **No servers, no analytics, no telemetry.** Everything runs on-device — except the **opt-in** SponsorBlock lookup, which sends only the video ID to `sponsor.ajayyy.com` (off by default).
 - Settings live in `chrome.storage` only. Nothing ever leaves your browser.
 - Permissions are minimal: ad/tracker hosts + `declarativeNetRequest` + `storage`. No `<all_urls>`, no tab reading, no history access.
 
@@ -96,10 +106,12 @@ Zero dependencies. Zero build step. Just load the folder.
 
 - Author & maintainer: **[9M2PJU](https://hamradio.my)** — <https://hamradio.my>
 - Enhancement concepts + theme colors: [YouTube-Enhancer/extension](https://github.com/YouTube-Enhancer/extension) (MIT) and RaitaroH's [YouTube-DeepDark](https://github.com/RaitaroH/YouTube-DeepDark) — re-implemented natively, no upstream code vendored.
-- License: [MIT](LICENSE). PRs welcome — especially updated selectors when YouTube moves things around (`SKIP_SELECTORS` in `src/content.js`).
+- In-video sponsor skipping inspired by [ajayyy/SponsorBlock](https://github.com/ajayyy/SponsorBlock) (GPL-3.0) via its public read API — original client code, nothing copied.
+- License: [GPL-3.0](LICENSE) — Copyright © 2026 9M2PJU. PRs welcome — especially updated selectors when YouTube moves things around (`SKIP_SELECTORS` in `src/content.js`).
 
 ## 📝 Changelog
 
+- **v1.4.0** — SponsorBlock-style crowdsourced skips (8 categories, opt-in, original API client)
 - **v1.3.0** — Lite themes (5 presets + accent) · seek/speed buttons · wheel volume · feed declutter · videos-per-row · link/key fixes
 - **v1.2.0** — 12-feature pack: Shorts hiding, volume boost, loop/timestamp/screenshot buttons, distractions filter, remaining time, Shorts auto-scroll
 - **v1.1.0** — First enhancement port: theater, autoplay-off, volume/speed memory, forced quality, continue-watching skip

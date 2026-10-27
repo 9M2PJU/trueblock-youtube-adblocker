@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "TrueBlock for YouTube — Ultimate Ad Blocker",
   "short_name": "TrueBlock YT",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Ultra-fast, privacy-first YouTube ad blocker. Skips pre-roll/mid-roll/post-roll, removes banners, overlays, masthead & sponsored slots, and bypasses anti-adblock detection. Plus optional enhancements (theater, quality, volume).",
   "author": "9M2PJU",
   "homepage_url": "https://hamradio.my",
@@ -35,7 +35,8 @@
     "*://*.googlesyndication.com/*",
     "*://*.doubleclick.net/*",
     "*://*.googleadservices.com/*",
-    "*://*.google-analytics.com/*"
+    "*://*.google-analytics.com/*",
+    "https://sponsor.ajayyy.com/*"
   ],
   "content_scripts": [
     {
@@ -47,7 +48,7 @@
     },
     {
       "matches": ["*://*.youtube.com/*", "*://*.youtube-nocookie.com/*"],
-      "js": ["src/content.js", "src/enhancements.js"],
+      "js": ["src/content.js", "src/enhancements.js", "src/sponsorblock.js"],
       "css": ["src/content.css"],
       "run_at": "document_start",
       "all_frames": false
