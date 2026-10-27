@@ -4,7 +4,7 @@
 
 **Adblock, Sponsor Skip & Enhancer — ultra-fast, privacy-first, 100% local.**
 
-[![Version](https://img.shields.io/badge/version-1.8.2-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
+[![Version](https://img.shields.io/badge/version-1.9.0-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
 [![Chrome](https://img.shields.io/badge/Chrome-MV3-green?style=flat-square&logo=googlechrome)](https://github.com/9M2PJU/trueblock-youtube-adblocker)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-yellow?style=flat-square)](LICENSE)
 [![No tracking](https://img.shields.io/badge/tracking-none-blue?style=flat-square)](#-privacy)
@@ -52,7 +52,7 @@
 | Uninterrupted | Skip *“Video paused. Continue watching?”* · Shorts auto-scroll |
 | Player tools | Loop toggle · copy timestamp link · screenshot frame → PNG |
 | Declutter | Hide Shorts everywhere · hide end cards / live chat / paid banner · hide posts, playlists, member-only, playables · videos-per-row 1–8 · unwrap redirect links + strip tracker params · block 0–9 key seeking |
-| Audio | Volume boost 150 / 200 / 300 % · **audiophile 10-band EQ** (ISO bands, preamp with auto-clip-guard, global Q, 6 presets + full custom sliders), shared WebAudio graph |
+| Audio | Volume boost 150 / 200 / 300 % · **audiophile 10-band EQ** (ISO bands, preamp with auto-clip-guard, global Q, 6 presets + full custom sliders) · **limiter** (−3dB/20:1 safety net) · **spectrum overlay** (live analyzer), one shared WebAudio graph |
 
 ### 🤝 SponsorBlock (crowdsourced, on by default)
 
@@ -119,6 +119,7 @@ Free forever, no ads, no tracking. If it saves your sanity, chip in:
 
 ## 📝 Changelog
 
+- **v1.9.0** — Limiter safety net + live spectrum overlay on the player
 - **v1.8.2** — Rebranded descriptor: Adblock, Sponsor Skip & Enhancer (name now matches scope)
 - **v1.8.1** — EQ curves retuned per SFX Engine guide (de-mud, de-ess, sane treble) + Rock/Metal preset + dynamic loudness that flattens as volume rises
 - **v1.8.0** — Audiophile EQ: 10 ISO bands, preamp with auto clip-guard, global Q, 6 presets + custom sliders

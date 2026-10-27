@@ -15,6 +15,8 @@ const DEFAULTS = {
   enhHideShorts: false,
   enhVolumeBoost: false,
   enhBoostValue: '2',
+  enhLimiter: true,
+  enhSpectrum: false,
   enhEQ: false,
   enhEqPreset: 'flat',
   enhEqGains: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],

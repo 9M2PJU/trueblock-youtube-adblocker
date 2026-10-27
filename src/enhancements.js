@@ -33,6 +33,8 @@
     enhEqGains: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     enhEqPreamp: '0',
     enhEqQ: 'normal',
+    enhLimiter: true,
+    enhSpectrum: false,
     enhScreenshot: false,
     enhPlayerButtons: false,
     enhHideDistractions: false,
@@ -228,6 +230,8 @@
       distractionsCssSweep();
       boostSweep();
       eqSweep();
+      limiterSweep();
+      if (!specRAF) { try { specRAF = requestAnimationFrame(spectrumTick); } catch {} }
       buttonsSweep();
       remainingSweep();
       shortsScrollSweep();
@@ -295,10 +299,11 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
     } catch {}
   }
 
-  /* 9) Unified WebAudio graph — 10-band audiophile EQ + volume boost, one graph
-   * per video element (a second MediaElementSource would break audio), chain:
-   * source -> preamp -> 10 biquads -> boost gain -> destination.
-   * Disabled stages sit neutral so toggling never rebuilds mid-playback.
+  /* 9) Unified WebAudio graph — 10-band audiophile EQ + volume boost + limiter,
+   * one graph per video element (a second MediaElementSource would break audio):
+   * source -> preamp -> 10 biquads -> boost gain -> limiter -> analyser -> out.
+   * The analyser is a pass-through tap feeding the spectrum overlay.
+   * Disabled stages sit neutral so toggling never rebuilds mid-playback. */
    * ISO 10-band layout (lowshelf / 8x peaking / highshelf), global Q,
    * preamp auto-set to -peak on preset pick (clip-free boosting, like
    * EqualizerAPO/Peace). setTargetAtTime ramps kill zipper noise. */
@@ -366,12 +371,25 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
       });
       const gain = ctx.createGain();
       gain.gain.value = 1;
+      const comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -3;
+      comp.knee.value = 0;
+      comp.ratio.value = 20;
+      comp.attack.value = 0.003;
+      comp.release.value = 0.25;
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 2048;
+      analyser.smoothingTimeConstant = 0.8;
+      analyser.minDecibels = -90;
+      analyser.maxDecibels = -30;
       let node = src;
       node.connect(pre); node = pre;
       for (const f of filters) { node.connect(f); node = f; }
       node.connect(gain);
-      gain.connect(ctx.destination);
-      g = { ctx, pre, filters, gain };
+      gain.connect(comp);
+      comp.connect(analyser);
+      analyser.connect(ctx.destination);
+      g = { ctx, pre, filters, gain, comp, analyser };
       audioGraphs.set(video, g);
     } catch {
       return null; // already routed / unsupported — leave element alone
@@ -435,6 +453,69 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
         }
       } catch {}
     } catch {}
+  }
+
+  /* 9b) Limiter (clip safety net) + spectrum overlay tap. */
+  function limiterSweep() {
+    try {
+      const v = document.querySelector('video.html5-main-video');
+      const g = v ? audioGraphs.get(v) : null;
+      if (!g) return;
+      const wantOn = on() && s.enhLimiter;
+      try {
+        if (g.ctx.state === 'suspended') g.ctx.resume().catch(() => {});
+        const t = g.ctx.currentTime;
+        const th = wantOn ? -3 : 0, ra = wantOn ? 20 : 1;
+        if (Math.abs(g.comp.threshold.value - th) > 0.01) g.comp.threshold.setTargetAtTime(th, t, 0.03);
+        if (Math.abs(g.comp.ratio.value - ra) > 0.01) g.comp.ratio.setTargetAtTime(ra, t, 0.03);
+      } catch {}
+    } catch {}
+  }
+  let specRAF = 0;
+  function spectrumTick() {
+    specRAF = 0;
+    let want = false;
+    try {
+      const v = on() && s.enhSpectrum ? document.querySelector('video.html5-main-video') : null;
+      const g = v ? audioGraphs.get(v) : null;
+      const box = v ? v.closest('.html5-video-player') : null;
+      let cv = document.getElementById('tb-spectrum');
+      if (!g || !box || v.paused || v.muted) {
+        if (cv) cv.style.display = 'none';
+      } else {
+        if (!cv || cv.__tb_box !== box) {
+          try { cv?.remove(); } catch {}
+          cv = document.createElement('canvas');
+          cv.id = 'tb-spectrum';
+          cv.width = 132; cv.height = 44;
+          cv.__tb_box = box;
+          cv.setAttribute('style', 'position:absolute;right:8px;bottom:48px;width:132px;height:44px;z-index:30;pointer-events:none;opacity:.85');
+          try {
+            if (getComputedStyle(box).position === 'static') box.style.position = 'relative';
+            box.appendChild(cv);
+          } catch {}
+        }
+        cv.style.display = 'block';
+        try {
+          const c2d = cv.getContext('2d');
+          const data = new Uint8Array(g.analyser.frequencyBinCount);
+          g.analyser.getByteFrequencyData(data);
+          const W = cv.width, H = cv.height, N = 28;
+          c2d.clearRect(0, 0, W, H);
+          const grad = c2d.createLinearGradient(0, H, 0, 0);
+          grad.addColorStop(0, '#00adee');
+          grad.addColorStop(1, '#e62117');
+          c2d.fillStyle = grad;
+          for (let i = 0; i < N; i++) {
+            const idx = Math.min(data.length - 1, Math.floor(Math.pow(i / N, 1.7) * data.length * 0.72));
+            const h = Math.max(1, (data[idx] / 255) * H);
+            c2d.fillRect(i * (W / N) + 1, H - h, W / N - 2, h);
+          }
+        } catch {}
+        want = true;
+      }
+    } catch {}
+    if (want) specRAF = requestAnimationFrame(spectrumTick);
   }
 
   /* 10) Player buttons — loop toggle, copy-timestamp, screenshot */
