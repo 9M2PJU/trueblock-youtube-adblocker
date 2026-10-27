@@ -3,7 +3,7 @@
 body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; width: 320px; }
 .wrap { padding: 14px 14px 10px; }
 header { display: flex; align-items: center; gap: 10px; }
-.logo { width: 36px; height: 36px; border-radius: 10px; background: #e62117; color: #fff; display: grid; place-items: center; font-size: 18px; font-weight: 800; }
+.logo { width: 36px; height: 36px; border-radius: 10px; }
 h1 { font-size: 16px; margin: 0; }
 h1 span { font-weight: 400; opacity: .7; }
 .sub { margin: 0; font-size: 12px; opacity: .6; }
