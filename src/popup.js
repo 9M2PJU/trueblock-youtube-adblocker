@@ -15,6 +15,8 @@ const DEFAULTS = {
   enhHideShorts: false,
   enhVolumeBoost: false,
   enhBoostValue: '2',
+  enhEQ: false,
+  enhEqPreset: 'flat',
   enhScreenshot: false,
   enhPlayerButtons: false,
   enhHideDistractions: false,

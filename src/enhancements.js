@@ -28,6 +28,8 @@
     enhHideShorts: false,
     enhVolumeBoost: false,
     enhBoostValue: '2',
+    enhEQ: false,
+    enhEqPreset: 'flat',
     enhScreenshot: false,
     enhPlayerButtons: false,
     enhHideDistractions: false,
@@ -222,6 +224,7 @@
       shortsCssSweep();
       distractionsCssSweep();
       boostSweep();
+      eqSweep();
       buttonsSweep();
       remainingSweep();
       shortsScrollSweep();
@@ -289,31 +292,83 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
     } catch {}
   }
 
-  /* 9) Volume boost — WebAudio gain node per video element (fixed level from settings) */
-  const boostNodes = new WeakMap();
+  /* 9) Unified WebAudio graph — 6-band EQ + volume boost per video element.
+   * One MediaElementSource per element (creating two breaks audio), chain:
+   * source -> 6 biquads -> boost gain -> destination. Disabled stages sit at
+   * neutral (0 dB / 1x) so toggling never rebuilds the graph mid-playback.
+   * Band layout is standard graphic-EQ practice (lowshelf/peaking/highshelf). */
+  const EQ_BANDS = [
+    { type: 'lowshelf', freq: 60 }, { type: 'peaking', freq: 250 },
+    { type: 'peaking', freq: 1000 }, { type: 'peaking', freq: 4000 },
+    { type: 'peaking', freq: 8000 }, { type: 'highshelf', freq: 16000 }
+  ];
+  const EQ_PRESETS = {
+    flat: [0, 0, 0, 0, 0, 0],
+    bass: [7, 4, 1, 0, 0, 0],
+    treble: [0, 0, 0, 2, 4, 6],
+    vocal: [-2, 0, 3, 4, 2, 0],
+    vshape: [5, 2, -2, 0, 3, 5]
+  };
+  const audioGraphs = new WeakMap();
+  function ensureAudioGraph(video) {
+    let g = audioGraphs.get(video);
+    if (g) return g;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      const ctx = new AC();
+      const src = ctx.createMediaElementSource(video);
+      const filters = EQ_BANDS.map((b) => {
+        const f = ctx.createBiquadFilter();
+        f.type = b.type;
+        f.frequency.value = b.freq;
+        f.Q.value = 1;
+        f.gain.value = 0;
+        return f;
+      });
+      const gain = ctx.createGain();
+      gain.gain.value = 1;
+      let node = src;
+      for (const f of filters) { node.connect(f); node = f; }
+      node.connect(gain);
+      gain.connect(ctx.destination);
+      g = { ctx, filters, gain };
+      audioGraphs.set(video, g);
+    } catch {
+      return null; // already routed / unsupported — leave element alone
+    }
+    return g;
+  }
   function boostSweep() {
     try {
       const v = document.querySelector('video.html5-main-video');
       if (!v) return;
-      let e = boostNodes.get(v);
       const want = on() && s.enhVolumeBoost ? parseFloat(s.enhBoostValue) || 2 : 1;
-      if (!e) {
-        if (want <= 1) return;
-        const AC = window.AudioContext || window.webkitAudioContext;
-        if (!AC) return;
-        try {
-          const ctx = new AC();
-          const src = ctx.createMediaElementSource(v);
-          const gain = ctx.createGain();
-          src.connect(gain);
-          gain.connect(ctx.destination);
-          e = { ctx, gain };
-          boostNodes.set(v, e);
-        } catch { return; } // already routed (e.g. re-navigated element)
-      }
+      if (want <= 1 && !audioGraphs.get(v)) return; // off + no graph: nothing to do
+      const g = ensureAudioGraph(v);
+      if (!g) return;
       try {
-        if (e.ctx.state === 'suspended') e.ctx.resume().catch(() => {});
-        if (Math.abs(e.gain.gain.value - want) > 0.01) e.gain.gain.value = want;
+        if (g.ctx.state === 'suspended') g.ctx.resume().catch(() => {});
+        if (Math.abs(g.gain.gain.value - want) > 0.01) g.gain.gain.value = want;
+      } catch {}
+    } catch {}
+  }
+  function eqSweep() {
+    try {
+      const gains = on() && s.enhEQ ? (EQ_PRESETS[s.enhEqPreset] || EQ_PRESETS.flat) : EQ_PRESETS.flat;
+      const v = document.querySelector('video.html5-main-video');
+      if (!v) return;
+      const active = gains.some((d) => d !== 0);
+      if (!active && !audioGraphs.get(v)) return; // flat + no graph: nothing to do
+      const g = ensureAudioGraph(v);
+      if (!g) return;
+      try {
+        if (g.ctx.state === 'suspended') g.ctx.resume().catch(() => {});
+        for (let i = 0; i < 6; i++) {
+          if (Math.abs(g.filters[i].gain.value - gains[i]) > 0.01) {
+            g.filters[i].gain.setTargetAtTime(gains[i], g.ctx.currentTime, 0.03);
+          }
+        }
       } catch {}
     } catch {}
   }

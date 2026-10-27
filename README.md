@@ -4,7 +4,7 @@
 
 **The ultra-fast, privacy-first YouTube ad blocker — now with SponsorBlock-style crowdsourced skips, 19 enhancements & 5 dark themes.**
 
-[![Version](https://img.shields.io/badge/version-1.6.0-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
+[![Version](https://img.shields.io/badge/version-1.7.0-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
 [![Chrome](https://img.shields.io/badge/Chrome-MV3-green?style=flat-square&logo=googlechrome)](https://github.com/9M2PJU/trueblock-youtube-adblocker)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-yellow?style=flat-square)](LICENSE)
 [![No tracking](https://img.shields.io/badge/tracking-none-blue?style=flat-square)](#-privacy)
@@ -52,7 +52,7 @@
 | Uninterrupted | Skip *“Video paused. Continue watching?”* · Shorts auto-scroll |
 | Player tools | Loop toggle · copy timestamp link · screenshot frame → PNG |
 | Declutter | Hide Shorts everywhere · hide end cards / live chat / paid banner · hide posts, playlists, member-only, playables · videos-per-row 1–8 · unwrap redirect links + strip tracker params · block 0–9 key seeking |
-| Audio | Volume boost 150 / 200 / 300 % (WebAudio) |
+| Audio | Volume boost 150 / 200 / 300 % · 6-band equalizer (Flat / Bass / Treble / Vocal / V-Shape), shared WebAudio graph |
 
 ### 🤝 SponsorBlock (crowdsourced, on by default)
 
@@ -112,11 +112,13 @@ Free forever, no ads, no tracking. If it saves your sanity, chip in:
 
 - Author & maintainer: **[9M2PJU](https://hamradio.my)** — <https://hamradio.my>
 - Enhancement concepts: [YouTube-Enhancer/extension](https://github.com/YouTube-Enhancer/extension) (MIT) — re-implemented natively, no upstream code vendored.
+- Equalizer concept: [aashishjhaa/eq-for-youtube](https://github.com/aashishjhaa/eq-for-youtube) (no license declared — original implementation, nothing copied; standard 6-band WebAudio design).
 - In-video sponsor skipping inspired by [ajayyy/SponsorBlock](https://github.com/ajayyy/SponsorBlock) (GPL-3.0) via its public read API — original client code, nothing copied.
 - License: [GPL-3.0](LICENSE) — Copyright © 2026 9M2PJU. PRs welcome — especially updated selectors when YouTube moves things around (`SKIP_SELECTORS` in `src/content.js`).
 
 ## 📝 Changelog
 
+- **v1.7.0** — 6-band equalizer (5 presets) sharing one WebAudio graph with volume boost
 - **v1.6.0** — Themes v2: rebuilt with outside-label controls, Pure Black default, bidirectional enforcement, container fallbacks, read-back self-check + toasts
 - **v1.5.5** — Settings are the source of truth: theater enforced both ways (on puts it in, off keeps it out), quality re-applied persistently instead of giving up after retries
 - **v1.5.4** — Unticking theater/autoplay-style modes now reverts YouTube back out (one-shot revert, no more stuck states)
