@@ -42,11 +42,9 @@
   "host_permissions": [
     "*://*.youtube.com/*",
     "*://*.youtube-nocookie.com/*",
-    "*://*.googlevideo.com/*",
     "*://*.googlesyndication.com/*",
     "*://*.doubleclick.net/*",
     "*://*.googleadservices.com/*",
-    "*://*.google-analytics.com/*",
     "https://sponsor.ajayyy.com/*"
   ],
   "content_scripts": [

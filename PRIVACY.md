@@ -18,7 +18,7 @@ offline; the ad blocker and all other features keep working without it.
 
 ## Permissions — why each is needed
 
-- **Ad/tracker hosts** (`youtube.com`, `googlevideo.com`, `googlesyndication.com`,
+- **Ad/tracker hosts** (`youtube.com`, `googlesyndication.com`,
   `doubleclick.net`, `googleadservices.com`): blocking ad and tracking requests.
 - **SponsorBlock API host** (`sponsor.ajayyy.com`): fetching skip segments.
 - **declarativeNetRequest**: enforcing the network blocklist.
