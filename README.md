@@ -1,12 +1,10 @@
 <div align="center">
 
-<img src="icons/icon128.png" width="96" alt="TrueBlock logo" />
-
-# ▶ TrueBlock for YouTube
+![TrueBlock for YouTube — Adblock · Sponsor Skip · Enhancer](assets/banner.jpg)
 
 **Adblock, Sponsor Skip & Enhancer — ultra-fast, privacy-first, 100% local.**
 
-[![Version](https://img.shields.io/badge/version-1.9.5-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
+[![Version](https://img.shields.io/badge/version-1.9.6-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
 [![Chrome](https://img.shields.io/badge/Chrome-MV3-green?style=flat-square&logo=googlechrome)](https://github.com/9M2PJU/trueblock-youtube-adblocker)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-yellow?style=flat-square)](LICENSE)
 [![No tracking](https://img.shields.io/badge/tracking-none-blue?style=flat-square)](#-privacy)
@@ -121,6 +119,7 @@ Free forever, no ads, no tracking. If it saves your sanity, chip in:
 
 ## 📝 Changelog
 
+- **v1.9.6** — New official art: blue-shield logo (extension icons rebuilt) + banner hero in README
 - **v1.9.5** — Autoplay toggle is bidirectional: unticking restores Up-Next (tracked touch, manual clicks always win)
 - **v1.9.4** — Official logo: red shield + play mark (16–512px, README hero)
 - **v1.9.3** — 6x less CPU: skip-button scans gated behind ad detection (48ms to 8ms per 20s, measured)
