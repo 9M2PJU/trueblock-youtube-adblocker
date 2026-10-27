@@ -8,6 +8,7 @@ rm -rf dist TrueBlock-Chrome.zip TrueBlock-Firefox.zip
 mkdir -p dist/chrome dist/firefox
 
 FILES="rules src icons assets LICENSE README.md PRIVACY.md .github/FUNDING.yml"
+cp manifest.json dist/chrome/manifest.json
 python3 - <<'EOF'
 import json
 m = json.load(open('manifest.json'))
