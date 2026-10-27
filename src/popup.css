@@ -24,6 +24,8 @@ h1 span { font-weight: 400; opacity: .7; }
 .row small { display: block; font-weight: 400; opacity: .6; }
 .row input { margin-top: 2px; accent-color: #e62117; width: 16px; height: 16px; }
 .row select { margin-top: 4px; accent-color: #e62117; border-radius: 6px; padding: 2px 4px; }
+.row .grow { flex: 1; cursor: pointer; }
+div.row input[type="checkbox"] { margin-top: 2px; accent-color: #e62117; width: 16px; height: 16px; }
 .section-title { font-size: 12px; margin: 12px 2px 2px; text-transform: uppercase; letter-spacing: .04em; opacity: .7; }
 .section-title small { text-transform: none; letter-spacing: 0; font-weight: 400; }
 .section-title a { color: #e62117; }

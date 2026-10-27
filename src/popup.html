@@ -47,42 +47,42 @@
       <label class="row"><input type="checkbox" id="enhRememberVolume" checked /><span>Remember volume</span></label>
       <label class="row"><input type="checkbox" id="enhSkipContinue" checked /><span>Skip “Continue watching?” pause</span></label>
       <label class="row"><input type="checkbox" id="enhRememberSpeed" /><span>Remember playback speed</span></label>
-      <label class="row"><input type="checkbox" id="enhQuality" /><span>Force quality <small><select id="enhQualityValue" aria-label="Preferred quality">
+      <div class="row"><input type="checkbox" id="enhQuality" /><label for="enhQuality" class="grow">Force quality</label><select id="enhQualityValue" aria-label="Preferred quality">
         <option value="hd2160">2160p 4K</option>
         <option value="hd1440">1440p</option>
         <option value="hd1080" selected>1080p</option>
         <option value="hd720">720p</option>
         <option value="large">480p</option>
         <option value="medium">360p</option>
-      </select></small></span></label>
+      </select></div>
       <label class="row"><input type="checkbox" id="enhHideShorts" /><span>Hide Shorts everywhere <small>home · search · sidebar · channel</small></span></label>
-      <label class="row"><input type="checkbox" id="enhVolumeBoost" /><span>Volume boost <small><select id="enhBoostValue" aria-label="Boost level">
+      <div class="row"><input type="checkbox" id="enhVolumeBoost" /><label for="enhVolumeBoost" class="grow">Volume boost</label><select id="enhBoostValue" aria-label="Boost level">
         <option value="1.5">150%</option>
         <option value="2" selected>200%</option>
         <option value="3">300%</option>
-      </select></small></span></label>
+      </select></div>
       <label class="row"><input type="checkbox" id="enhPlayerButtons" /><span>Player buttons <small>loop · copy timestamp link</small></span></label>
       <label class="row"><input type="checkbox" id="enhScreenshot" /><span>Screenshot button <small>save frame as PNG</small></span></label>
       <label class="row"><input type="checkbox" id="enhHideDistractions" /><span>Hide distractions <small>end cards · live chat · paid banner</small></span></label>
       <label class="row"><input type="checkbox" id="enhRemaining" /><span>Show remaining time <small>rate-aware countdown</small></span></label>
       <label class="row"><input type="checkbox" id="enhShortsScroll" /><span>Shorts auto-scroll <small>next on ended</small></span></label>
-      <label class="row"><input type="checkbox" id="enhSeekButtons" /><span>Seek buttons <small><select id="enhSeekSecs" aria-label="Seek seconds">
+      <div class="row"><input type="checkbox" id="enhSeekButtons" /><label for="enhSeekButtons" class="grow">Seek buttons</label><select id="enhSeekSecs" aria-label="Seek seconds">
         <option value="5">±5s</option>
         <option value="10" selected>±10s</option>
         <option value="15">±15s</option>
         <option value="30">±30s</option>
-      </select></small></span></label>
+      </select></div>
       <label class="row"><input type="checkbox" id="enhSpeedButtons" /><span>Speed buttons <small>− / ＋ 0.25× steps</small></span></label>
       <label class="row"><input type="checkbox" id="enhWheelVolume" /><span>Scroll-wheel volume <small>wheel over player</small></span></label>
       <label class="row"><input type="checkbox" id="enhHideClutter" /><span>Hide feed clutter <small>posts · playlists · member-only · playables</small></span></label>
-      <label class="row"><input type="checkbox" id="enhPerRow" /><span>Videos per row <small><select id="enhPerRowValue" aria-label="Videos per row">
+      <div class="row"><input type="checkbox" id="enhPerRow" /><label for="enhPerRow" class="grow">Videos per row</label><select id="enhPerRowValue" aria-label="Videos per row">
         <option value="2">2</option>
         <option value="3">3</option>
         <option value="4" selected>4</option>
         <option value="5">5</option>
         <option value="6">6</option>
         <option value="8">8</option>
-      </select></small></span></label>
+      </select></div>
       <label class="row"><input type="checkbox" id="enhLinkFix" /><span>Link + key fixes <small>unwrap redirects · strip trackers · block 0-9 seek</small></span></label>
     </section>
 
@@ -99,6 +99,18 @@
         <label class="cat"><input type="checkbox" id="sbPreview" />Recap / preview</label>
         <label class="cat"><input type="checkbox" id="sbFiller" />Filler</label>
       </div>
+    </section>
+
+    <section class="group">
+      <h2 class="section-title">Themes <small>v2 · dramatic default · controls kept outside labels</small></h2>
+      <div class="row"><input type="checkbox" id="enhTheme" /><label for="enhTheme" class="grow">Dark theme</label><select id="enhThemePreset" aria-label="Theme preset">
+        <option value="pure-black" selected>Pure Black</option>
+        <option value="dracula">Dracula</option>
+        <option value="mocha">Catppuccin-Mocha</option>
+        <option value="discord">Discord</option>
+        <option value="deep-dark">Deep-Dark</option>
+      </select></div>
+      <div class="row"><label for="enhAccent" class="grow">Accent color <small>progress bar · links (preset default until picked)</small></label><input type="color" id="enhAccent" value="#ffffff" /></div>
     </section>
 
     <footer>

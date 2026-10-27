@@ -2,16 +2,16 @@
 
 # ▶ TrueBlock for YouTube
 
-**The ultra-fast, privacy-first YouTube ad blocker — now with SponsorBlock-style crowdsourced skips & 18 enhancements.**
+**The ultra-fast, privacy-first YouTube ad blocker — now with SponsorBlock-style crowdsourced skips, 18 enhancements & 5 dark themes.**
 
-[![Version](https://img.shields.io/badge/version-1.5.5-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
+[![Version](https://img.shields.io/badge/version-1.6.0-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
 [![Chrome](https://img.shields.io/badge/Chrome-MV3-green?style=flat-square&logo=googlechrome)](https://github.com/9M2PJU/trueblock-youtube-adblocker)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-yellow?style=flat-square)](LICENSE)
 [![No tracking](https://img.shields.io/badge/tracking-none-blue?style=flat-square)](#-privacy)
 
 *Skips video ads in ~50&nbsp;ms · kills banners, overlays & sponsored slots · bypasses anti-adblock walls — all running 100% locally.*
 
-[⬇️ Install](#-install-30-seconds) · [✨ Features](#-what-it-does) · [🔒 Privacy](#-privacy) · [🙏 Credits](#-credits)
+[⬇️ Install](#-install-30-seconds) · [✨ Features](#-what-it-does) · [🎨 Themes](#-themes) · [🔒 Privacy](#-privacy) · [🙏 Credits](#-credits)
 
 </div>
 
@@ -64,6 +64,12 @@ Skips **in-video** sponsor reads, intros, outros and more using the community da
 
 > Privacy note: this sends the current **video ID** to `sponsor.ajayyy.com` to fetch segments (untick to disable). Everything else in TrueBlock stays fully local.
 
+### 🎨 Themes (v2 — rebuilt to actually stick)
+
+- **5 presets**, default **Pure Black** (unmistakable — if it applies, you'll know)
+- **Accent picker** in any color; preset default until you pick
+- Hardened: controls live outside labels (no silent untick), bidirectional enforcement, doubled-specificity selectors + direct container fallbacks, and a read-back self-check that toasts a warning if your YouTube variant ignores the override
+
 ---
 
 ## 🗂️ Project layout
@@ -75,7 +81,7 @@ src/
   inject.js            # MAIN-world player-response cleaner
   content.js           # ad skipper + DOM cleaner + anti-adblock
   sponsorblock.js      # crowdsourced sponsor skipping, on by default (original API client)
-  enhancements.js      # 18 optional enhancements (~30 KB vanilla JS)
+  enhancements.js      # 18 optional enhancements + v2 themes (~35 KB vanilla JS)
   content.css          # cosmetic ad hiding
   background.js        # badge counter + stats
   popup.html/.css/.js  # control panel + About dialog
@@ -111,6 +117,7 @@ Free forever, no ads, no tracking. If it saves your sanity, chip in:
 
 ## 📝 Changelog
 
+- **v1.6.0** — Themes v2: rebuilt with outside-label controls, Pure Black default, bidirectional enforcement, container fallbacks, read-back self-check + toasts
 - **v1.5.5** — Settings are the source of truth: theater enforced both ways (on puts it in, off keeps it out), quality re-applied persistently instead of giving up after retries
 - **v1.5.4** — Unticking theater/autoplay-style modes now reverts YouTube back out (one-shot revert, no more stuck states)
 - **v1.5.3** — Removed broken themes (use YouTube's native appearance settings)

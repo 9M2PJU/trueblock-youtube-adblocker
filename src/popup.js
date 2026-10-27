@@ -20,6 +20,9 @@ const DEFAULTS = {
   enhHideDistractions: false,
   enhRemaining: false,
   enhShortsScroll: false,
+  enhTheme: false,
+  enhThemePreset: 'pure-black',
+  enhAccent: '',
   enhSeekButtons: false,
   enhSeekSecs: '10',
   enhSpeedButtons: false,
@@ -40,7 +43,7 @@ async function load() {
     const el = document.getElementById(id);
     if (!el) continue;
     if (el.type === 'checkbox') el.checked = !!vals[id];
-    else if (el.type === 'color') el.value = vals[id] || '#00adee';
+    else if (el.type === 'color') el.value = vals[id] || '#ffffff';
     else el.value = vals[id] ?? el.value;
   }
   refreshStats();

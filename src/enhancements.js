@@ -33,6 +33,9 @@
     enhHideDistractions: false,
     enhRemaining: false,
     enhShortsScroll: false,
+    enhTheme: false,
+    enhThemePreset: 'pure-black',
+    enhAccent: '',
     enhSeekButtons: false,
     enhSeekSecs: '10',
     enhSpeedButtons: false,
@@ -222,6 +225,7 @@
       buttonsSweep();
       remainingSweep();
       shortsScrollSweep();
+      themeSweep();
       seekSpeedSweep();
       clutterSweep();
       perRowSweep();
@@ -466,6 +470,79 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
           if (next) next.click();
         } catch {}
       });
+    } catch {}
+  }
+
+  /* 13) Lite themes v2 — presets mapped onto YouTube's --yt-spec-* vars.
+   * Preset colors adapted from RaitaroH's YouTube-DeepDark (via YouTube-Enhancer).
+   * Hardened: controls live OUTSIDE labels (no untick hazard), bidirectional
+   * enforcement, doubled specificity, direct container fallbacks in case a
+   * client ignores the vars, plus a read-back self-check with a warning toast. */
+  const THEMES = {
+    'pure-black': { name: 'Pure Black', color: '#ffffff', bg: '#000000', second: '#1e1e1e', hover: '#313131', text: '#ffffff', dimmer: '#aaaaaa' },
+    'dracula':    { name: 'Dracula', color: '#bd93f9', bg: '#282a36', second: '#2e3140', hover: '#44475a', text: '#f8f8f2', dimmer: '#bcc2cd' },
+    'mocha':      { name: 'Catppuccin-Mocha', color: '#cba6f7', bg: '#1e1e2e', second: '#181825', hover: '#313244', text: '#cdd6f4', dimmer: '#a6adc8' },
+    'discord':    { name: 'Discord', color: '#7289da', bg: '#1e2124', second: '#2f3136', hover: '#484b51', text: '#ffffff', dimmer: '#ada8aa' },
+    'deep-dark':  { name: 'Deep-Dark', color: '#00adee', bg: '#111111', second: '#181818', hover: '#232323', text: '#eff0f1', dimmer: '#cccccc' }
+  };
+  let lastThemeKey = '';
+  let themeWarned = false;
+  function themeCss(p, accent) {
+    const a = accent || p.color;
+    const css = `html.tb-theme.tb-theme{color-scheme:dark;--yt-spec-base-background:${p.bg}!important;--yt-spec-raised-background:${p.second}!important;`
+      + `--yt-spec-menu-background:${p.second}!important;--yt-spec-text-primary:${p.text}!important;`
+      + `--yt-spec-text-secondary:${p.dimmer}!important;--yt-spec-icon-inactive:${p.dimmer}!important;`
+      + `--yt-spec-10-percent-layer:${p.hover}!important;--yt-spec-touch-response:${p.hover}!important;`
+      + `--yt-spec-badge-chip-background:${p.hover}!important;--yt-spec-call-to-action:${a}!important;`
+      + `--yt-spec-suggested-action:${a}!important;--ytd-searchbox-background:${p.second}!important}`
+      + `html.tb-theme.tb-theme body,html.tb-theme.tb-theme ytd-app{background:${p.bg}!important;color:${p.text}!important}`
+      + `html.tb-theme.tb-theme ytd-masthead,html.tb-theme.tb-theme #masthead-container{background:${p.second}!important}`
+      + `html.tb-theme.tb-theme .ytp-play-progress{background:${a}!important}`
+      + `html.tb-theme.tb-theme .ytp-scrubber-button{background:${a}!important}`
+      + `html.tb-theme.tb-theme .ytp-volume-slider-handle:before{background:${a}!important}`
+      + `html.tb-theme.tb-theme a.yt-simple-endpoint{color:${a}}`;
+    return css;
+  }
+  function themeSweep() {
+    try {
+      const want = on() && s.enhTheme;
+      const root = document.documentElement;
+      let st = document.getElementById('tb-theme');
+      if (!want) {
+        if (st) st.remove();
+        root.classList.remove('tb-theme');
+        if (root.__tb_darkAdded) { root.removeAttribute('dark'); root.__tb_darkAdded = false; }
+        lastThemeKey = '';
+        themeWarned = false;
+        return;
+      }
+      const p = THEMES[s.enhThemePreset] || THEMES['pure-black'];
+      const accent = /^#[0-9a-fA-F]{6}$/.test(s.enhAccent || '') ? s.enhAccent : '';
+      const key = `${s.enhThemePreset}|${accent}`;
+      if (!root.hasAttribute('dark')) { root.setAttribute('dark', ''); root.__tb_darkAdded = true; }
+      root.classList.add('tb-theme');
+      if (!st) {
+        st = document.createElement('style');
+        st.id = 'tb-theme';
+        (document.head || root).appendChild(st);
+      }
+      if (key !== lastThemeKey) {
+        st.textContent = themeCss(p, accent);
+        const first = !lastThemeKey;
+        lastThemeKey = key;
+        themeWarned = false;
+        if (!first) toast(`Theme: ${(THEMES[s.enhThemePreset] || {}).name || s.enhThemePreset} applied`);
+      }
+      // Read-back self-check: is YouTube honoring the override?
+      if (!themeWarned && st.isConnected) {
+        try {
+          const got = getComputedStyle(root).getPropertyValue('--yt-spec-base-background').trim().toLowerCase();
+          if (got && got !== p.bg.toLowerCase()) {
+            themeWarned = true;
+            toast('Theme blocked by this YouTube variant — please report it');
+          }
+        } catch {}
+      }
     } catch {}
   }
 
