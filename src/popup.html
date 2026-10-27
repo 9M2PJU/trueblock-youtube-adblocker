@@ -87,7 +87,7 @@
     </section>
 
     <section class="group">
-      <h2 class="section-title">SponsorBlock <small>crowdsourced skips · <a href="https://github.com/ajayyy/SponsorBlock" target="_blank" rel="noopener">ajayyy/SponsorBlock</a> · off by default, queries sponsor.ajayyy.com</small></h2>
+      <h2 class="section-title">SponsorBlock <small>crowdsourced skips · <a href="https://github.com/ajayyy/SponsorBlock" target="_blank" rel="noopener">ajayyy/SponsorBlock</a> · on by default, queries sponsor.ajayyy.com</small></h2>
       <label class="row"><input type="checkbox" id="sbEnabled" /><span>Skip in-video sponsors <small>sends video ID to SponsorBlock API</small></span></label>
       <div class="catgrid">
         <label class="cat"><input type="checkbox" id="sbSponsor" checked />Sponsor</label>
@@ -117,8 +117,15 @@
       <button id="resetBtn" class="ghost">Reset counter</button>
       <a href="https://www.youtube.com" target="_blank" rel="noopener" class="cta">Open YouTube</a>
     </footer>
-    <button id="aboutBtn" class="about-btn" aria-haspopup="dialog">ⓘ About</button>
-    <div id="aboutDialog" class="about-backdrop" hidden>
+    <section class="donate">
+      <h2 class="section-title">Support TrueBlock <small>by 9M2PJU</small></h2>
+      <div class="donate-row">
+        <a class="donate-btn paypal" href="https://paypal.me/9M2PJU" target="_blank" rel="noopener" title="Donate via PayPal">💛 PayPal</a>
+        <a class="donate-btn bmc" href="https://buymeacoffee.com/9m2pju" target="_blank" rel="noopener" title="Buy me a coffee">☕ Coffee</a>
+        <a class="donate-btn wise" href="https://wise.com/pay/me/faizulz13" target="_blank" rel="noopener" title="Pay via Wise">💸 Wise</a>
+      </div>
+    </section>
+    <button id="aboutBtn" class="about-btn" aria-haspopup="dialog">ⓘ About</button>    <div id="aboutDialog" class="about-backdrop" hidden>
       <div class="about-card" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
         <h2 id="aboutTitle">TrueBlock for YouTube</h2>
         <p class="about-ver">Version <span id="aboutVersion">1.0.0</span></p>

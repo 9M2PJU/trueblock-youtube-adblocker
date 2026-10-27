@@ -4,7 +4,7 @@
 
 **The ultra-fast, privacy-first YouTube ad blocker — now with SponsorBlock-style crowdsourced skips, 19 enhancements & 5 dark themes.**
 
-[![Version](https://img.shields.io/badge/version-1.4.0-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
+[![Version](https://img.shields.io/badge/version-1.5.0-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
 [![Chrome](https://img.shields.io/badge/Chrome-MV3-green?style=flat-square&logo=googlechrome)](https://github.com/9M2PJU/trueblock-youtube-adblocker)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-yellow?style=flat-square)](LICENSE)
 [![No tracking](https://img.shields.io/badge/tracking-none-blue?style=flat-square)](#-privacy)
@@ -54,14 +54,14 @@
 | Declutter | Hide Shorts everywhere · hide end cards / live chat / paid banner · hide posts, playlists, member-only, playables · videos-per-row 1–8 · unwrap redirect links + strip tracker params · block 0–9 key seeking |
 | Audio | Volume boost 150 / 200 / 300 % (WebAudio) |
 
-### 🤝 SponsorBlock (crowdsourced, opt-in, off by default)
+### 🤝 SponsorBlock (crowdsourced, on by default)
 
 Skips **in-video** sponsor reads, intros, outros and more using the community database — clean-room client of the public read API, no SponsorBlock code vendored:
 
 - 8 categories: sponsor · intro · outro · subscribe-reminder · self-promo · off-topic music · recap/preview · filler (skip-type segments only)
 - Auto-skips with a toast (`Skipped sponsor (12s) · via SponsorBlock`), per-video cache, never fights the ad-skipper, fails open offline
 
-> Privacy note: enabling this sends the current **video ID** to `sponsor.ajayyy.com` to fetch segments. Everything else in TrueBlock stays fully local.
+> Privacy note: this sends the current **video ID** to `sponsor.ajayyy.com` to fetch segments (untick to disable). Everything else in TrueBlock stays fully local.
 
 ### 🎨 Themes
 
@@ -96,13 +96,21 @@ Zero dependencies. Zero build step. Just load the folder.
 
 ## 🔒 Privacy
 
-- **No servers, no analytics, no telemetry.** Everything runs on-device — except the **opt-in** SponsorBlock lookup, which sends only the video ID to `sponsor.ajayyy.com` (off by default).
+- **No servers, no analytics, no telemetry.** Everything runs on-device — except the **SponsorBlock** lookup (on by default), which sends only the video ID to `sponsor.ajayyy.com`.
 - Settings live in `chrome.storage` only. Nothing ever leaves your browser.
 - Permissions are minimal: ad/tracker hosts + `declarativeNetRequest` + `storage`. No `<all_urls>`, no tab reading, no history access.
 
 ---
 
 ## 🙏 Credits
+
+## ☕ Support TrueBlock
+
+Free forever, no ads, no tracking. If it saves your sanity, chip in:
+
+[![PayPal](https://img.shields.io/badge/PayPal-9M2PJU-0070ba?style=flat-square&logo=paypal)](https://paypal.me/9M2PJU)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_a_Coffee-9m2pju-ff813f?style=flat-square&logo=buymeacoffee)](https://buymeacoffee.com/9m2pju)
+[![Wise](https://img.shields.io/badge/Wise-faizulz13-163300?style=flat-square&logo=wise)](https://wise.com/pay/me/faizulz13)
 
 - Author & maintainer: **[9M2PJU](https://hamradio.my)** — <https://hamradio.my>
 - Enhancement concepts + theme colors: [YouTube-Enhancer/extension](https://github.com/YouTube-Enhancer/extension) (MIT) and RaitaroH's [YouTube-DeepDark](https://github.com/RaitaroH/YouTube-DeepDark) — re-implemented natively, no upstream code vendored.
@@ -111,6 +119,7 @@ Zero dependencies. Zero build step. Just load the folder.
 
 ## 📝 Changelog
 
+- **v1.5.0** — SponsorBlock on by default · donate buttons (PayPal · Coffee · Wise) + GitHub FUNDING.yml
 - **v1.4.0** — SponsorBlock-style crowdsourced skips (8 categories, opt-in, original API client)
 - **v1.3.0** — Lite themes (5 presets + accent) · seek/speed buttons · wheel volume · feed declutter · videos-per-row · link/key fixes
 - **v1.2.0** — 12-feature pack: Shorts hiding, volume boost, loop/timestamp/screenshot buttons, distractions filter, remaining time, Shorts auto-scroll

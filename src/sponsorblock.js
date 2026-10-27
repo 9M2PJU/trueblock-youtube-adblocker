@@ -5,7 +5,7 @@
  * No SponsorBlock code is vendored (upstream is GPL-3.0; this file is MIT like
  * the rest of TrueBlock). Project: https://github.com/ajayyy/SponsorBlock
  *
- * Privacy: OFF by default. When enabled, the current video ID is sent to
+ * Privacy: ON by default. When enabled, the current video ID is sent to
  * sponsor.ajayyy.com to fetch community segments. Nothing else is transmitted.
  */
 (() => {
@@ -21,7 +21,7 @@
   };
   const DEFAULTS = {
     enabled: true,
-    sbEnabled: false,
+    sbEnabled: true,
     sbSponsor: true, sbIntro: true, sbOutro: true, sbInteraction: false,
     sbSelfpromo: false, sbMusicOfftopic: false, sbPreview: false, sbFiller: false
   };

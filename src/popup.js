@@ -31,7 +31,7 @@ const DEFAULTS = {
   enhPerRow: false,
   enhPerRowValue: '4',
   enhLinkFix: false,
-  sbEnabled: false,
+  sbEnabled: true,
   sbSponsor: true, sbIntro: true, sbOutro: true, sbInteraction: false,
   sbSelfpromo: false, sbMusicOfftopic: false, sbPreview: false, sbFiller: false
 };

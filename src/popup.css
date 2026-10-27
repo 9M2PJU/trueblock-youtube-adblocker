@@ -35,6 +35,12 @@ footer { display: flex; gap: 8px; }
 .cta { flex: 2; text-align: center; background: #e62117; color: #fff; text-decoration: none; border-radius: 10px; padding: 8px; font-weight: 700; }
 .privacy { text-align: center; font-size: 11px; opacity: .55; margin: 8px 0 2px; }
 .about-btn { width: 100%; margin-top: 8px; border: 1px solid rgba(127,127,127,.4); background: transparent; border-radius: 10px; padding: 7px; cursor: pointer; font-weight: 600; }
+.donate { margin-top: 10px; }
+.donate-row { display: flex; gap: 6px; }
+.donate-btn { flex: 1; text-align: center; text-decoration: none; font-size: 12px; font-weight: 700; border-radius: 10px; padding: 7px 4px; color: #fff; }
+.donate-btn.paypal { background: #0070ba; }
+.donate-btn.bmc { background: #ff813f; }
+.donate-btn.wise { background: #163300; }
 .about-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: grid; place-items: center; padding: 16px; }
 .about-backdrop[hidden] { display: none; }
 .about-card { background: Canvas; color: CanvasText; border-radius: 14px; padding: 16px; width: 100%; max-width: 280px; box-shadow: 0 8px 30px rgba(0,0,0,.35); }
