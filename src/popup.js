@@ -86,6 +86,31 @@ for (const id of ids) {
   });
 }
 
+// Debounced writer: slider drags fire dozens of events/sec but storage.sync
+// allows ~120 writes/min — batch them so realtime drags never drop writes.
+const pendingSaves = {};
+let saveTimer = 0;
+function saveSoon(batch) {
+  Object.assign(pendingSaves, batch);
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(flushSaves, 150);
+}
+async function flushSaves(retry) {
+  clearTimeout(saveTimer);
+  const batch = { ...pendingSaves };
+  for (const k of Object.keys(batch)) delete pendingSaves[k];
+  if (!Object.keys(batch).length) return;
+  try { await chrome.storage.sync.set(batch); }
+  catch {
+    // One retry only — then drop (next drag rewrites anyway). No spin loop.
+    if (!retry) {
+      Object.assign(pendingSaves, batch);
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => flushSaves(true), 500);
+    }
+  }
+}
+
 // EQ panel: presets, preamp, Q, per-band sliders (audiophile 10-band)
 const EQ_TABLE = {
   flat: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -122,20 +147,22 @@ document.getElementById('enhEqPreset')?.addEventListener('change', async (e) => 
   }
 });
 document.querySelectorAll('.eqband').forEach((sl) => {
-  sl.addEventListener('input', async () => {
+  sl.addEventListener('input', () => {
     const b = sl.parentElement.querySelector('b');
     if (b) b.textContent = (+sl.value > 0 ? '+' : '') + sl.value;
     const gains = [...document.querySelectorAll('.eqband')].map((x) => +x.value);
-    await chrome.storage.sync.set({ enhEqGains: gains, enhEqPreset: 'custom' });
+    saveSoon({ enhEqGains: gains, enhEqPreset: 'custom' });
     const sel = document.getElementById('enhEqPreset');
     if (sel) sel.value = 'custom';
   });
+  sl.addEventListener('change', flushSaves);
 });
-document.getElementById('enhEqPreamp')?.addEventListener('input', async (e) => {
+document.getElementById('enhEqPreamp')?.addEventListener('input', (e) => {
   const pv = document.getElementById('enhEqPreampVal');
   if (pv) pv.textContent = ((+e.target.value > 0 ? '+' : '') + e.target.value) + 'dB';
-  await chrome.storage.sync.set({ enhEqPreamp: e.target.value });
+  saveSoon({ enhEqPreamp: e.target.value });
 });
+document.getElementById('enhEqPreamp')?.addEventListener('change', flushSaves);
 
 document.getElementById('resetBtn')?.addEventListener('click', async () => {
   try { await chrome.runtime.sendMessage({ type: 'tb-reset-session' }); } catch {}
