@@ -2,8 +2,9 @@
  *
  * ORIGINAL clean-room client of SponsorBlock's public read API:
  *   GET https://sponsor.ajayyy.com/api/skipSegments?videoID=..&categories=..&actionTypes=["skip"]
- * No SponsorBlock code is vendored (upstream is GPL-3.0; this file is MIT like
- * the rest of TrueBlock). Project: https://github.com/ajayyy/SponsorBlock
+ * No SponsorBlock code is vendored (upstream is GPL-3.0, same as this project).
+ * Project: https://github.com/ajayyy/SponsorBlock
+ * Copyright (C) 2026 9M2PJU <https://hamradio.my> — SPDX-License-Identifier: GPL-3.0-only
  *
  * Privacy: ON by default. When enabled, the current video ID is sent to
  * sponsor.ajayyy.com to fetch community segments. Nothing else is transmitted.
@@ -31,6 +32,13 @@
     chrome.storage.onChanged.addListener((ch, area) => {
       if (area !== 'sync') return;
       for (const k of Object.keys(ch)) s[k] = ch[k].newValue;
+      // Enabling (or changing categories) must refetch the current video immediately:
+      // refresh() skips cached IDs, so bust the cache and re-sweep at once.
+      if (ch.sbEnabled || ch.enabled || CATS.some((c) => ch[CATKEY[c]])) {
+        cache.clear();
+        curID = '';
+        try { setTimeout(sweep, 0); } catch {}
+      }
     });
   } catch {}
 
