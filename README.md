@@ -1,10 +1,12 @@
 <div align="center">
 
+<img src="icons/icon128.png" width="96" alt="TrueBlock logo" />
+
 # ▶ TrueBlock for YouTube
 
 **Adblock, Sponsor Skip & Enhancer — ultra-fast, privacy-first, 100% local.**
 
-[![Version](https://img.shields.io/badge/version-1.9.3-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
+[![Version](https://img.shields.io/badge/version-1.9.4-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
 [![Chrome](https://img.shields.io/badge/Chrome-MV3-green?style=flat-square&logo=googlechrome)](https://github.com/9M2PJU/trueblock-youtube-adblocker)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-yellow?style=flat-square)](LICENSE)
 [![No tracking](https://img.shields.io/badge/tracking-none-blue?style=flat-square)](#-privacy)
@@ -119,6 +121,7 @@ Free forever, no ads, no tracking. If it saves your sanity, chip in:
 
 ## 📝 Changelog
 
+- **v1.9.4** — Official logo: red shield + play mark (16–512px, README hero)
 - **v1.9.3** — 6x less CPU: skip-button scans gated behind ad detection (48ms to 8ms per 20s, measured)
 - **v1.9.2** — Realtime drag safety: debounced slider writes (storage.sync quota can silently drop drag floods), flushed on release
 - **v1.9.1** — Audit fixes: no more double-start counter inflation, no synthetic-ended playlist skips, absolute share links keep their origin, EQ toasts stop spamming on loudness+volume, XHR backstop arg fix, player-response seeding
