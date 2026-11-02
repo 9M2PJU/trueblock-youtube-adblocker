@@ -23,8 +23,8 @@
   const DEFAULTS = {
     enabled: true,
     sbEnabled: true,
-    sbSponsor: true, sbIntro: true, sbOutro: true, sbInteraction: false,
-    sbSelfpromo: false, sbMusicOfftopic: false, sbPreview: false, sbFiller: false
+    sbSponsor: true, sbIntro: true, sbOutro: true, sbInteraction: true,
+    sbSelfpromo: true, sbMusicOfftopic: true, sbPreview: true, sbFiller: true
   };
   let s = { ...DEFAULTS };
   try {

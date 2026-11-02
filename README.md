@@ -4,7 +4,7 @@
 
 **Adblock, Sponsor Skip & Enhancer — ultra-fast, privacy-first, 100% local.**
 
-[![Version](https://img.shields.io/badge/version-1.10.2-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
+[![Version](https://img.shields.io/badge/version-1.10.3-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
 [![Chrome](https://img.shields.io/badge/Chrome-MV3-green?style=flat-square&logo=googlechrome)](https://github.com/9M2PJU/trueblock-youtube-adblocker)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-yellow?style=flat-square)](LICENSE)
 [![No tracking](https://img.shields.io/badge/tracking-none-blue?style=flat-square)](#-privacy)
@@ -51,7 +51,7 @@ Same codebase, verified with Mozilla's `web-ext lint` (0 errors). Two things cha
 - Sponsored Shorts → auto-skipped
 - Live badge counter on the toolbar icon + session/total stats in the popup
 
-### ✨ Enhancements (all optional — on by default: volume memory, limiter, continue-skip, sponsor skip)
+### ✨ Enhancements (all optional — on by default: volume memory, limiter, continue-skip, sponsor skip, EQ on Rock/Metal, Pure Black theme, spectrum overlay, Shorts auto-scroll)
 
 | Group | Options |
 |---|---|
@@ -127,6 +127,7 @@ Free forever, no ads, no tracking. If TrueBlock saves your sanity, chip in:
 
 ## 📝 Changelog
 
+- **v1.10.3** — New defaults for fresh installs: EQ on (Rock/Metal), Pure Black theme, spectrum overlay, all 8 SponsorBlock categories, Shorts auto-scroll
 - **v1.10.2** — Store resubmission: version bump only (AMO validation-warning fixes shipped in v1.10.1)
 - **v1.10.1** — Shorts fixes: SponsorBlock now skips segments on `/shorts/` (was watch-only), sponsored-Shorts auto-advance hardened (badge-first detect + throttle), reel ad endpoints stripped, volume/speed/EQ/timestamp tools work on the active reel
 - **v1.10.0** — Return YouTube Dislike: crowdsourced like/dislike counts refill native buttons, exact totals in tooltip, optional like-ratio bar (watch + Shorts, fails open, toggle for fully offline)

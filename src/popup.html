@@ -62,15 +62,15 @@
         <option value="3">300%</option>
       </select></div>
       <div class="row"><input type="checkbox" id="enhLimiter" checked /><label for="enhLimiter" class="grow">Limiter <small>clip safety net · −3dB / 20:1</small></label></div>
-      <div class="row"><input type="checkbox" id="enhSpectrum" /><label for="enhSpectrum" class="grow">Spectrum overlay <small>live analyzer on the player</small></label></div>
-      <div class="row"><input type="checkbox" id="enhEQ" /><label for="enhEQ" class="grow">Equalizer <small>10-band audiophile · preamp · Q</small></label><select id="enhEqPreset" aria-label="EQ preset">
-        <option value="flat" selected>Flat</option>
+      <div class="row"><input type="checkbox" id="enhSpectrum" checked /><label for="enhSpectrum" class="grow">Spectrum overlay <small>live analyzer on the player</small></label></div>
+      <div class="row"><input type="checkbox" id="enhEQ" checked /><label for="enhEQ" class="grow">Equalizer <small>10-band audiophile · preamp · Q</small></label><select id="enhEqPreset" aria-label="EQ preset">
+        <option value="flat">Flat</option>
         <option value="bass">Bass Boost</option>
         <option value="treble">Treble Boost</option>
         <option value="vocal">Vocal</option>
         <option value="vshape">V-Shape</option>
         <option value="loudness">Loudness</option>
-        <option value="rock">Rock/Metal</option>
+        <option value="rock" selected>Rock/Metal</option>
         <option value="custom">Custom</option>
       </select></div>
       <div class="eqpanel" id="eqPanel">
@@ -91,7 +91,7 @@
       <label class="row"><input type="checkbox" id="enhScreenshot" /><span>Screenshot button <small>save frame as PNG</small></span></label>
       <label class="row"><input type="checkbox" id="enhHideDistractions" /><span>Hide distractions <small>end cards · live chat · paid banner</small></span></label>
       <label class="row"><input type="checkbox" id="enhRemaining" /><span>Show remaining time <small>rate-aware countdown</small></span></label>
-      <label class="row"><input type="checkbox" id="enhShortsScroll" /><span>Shorts auto-scroll <small>next on ended</small></span></label>
+      <label class="row"><input type="checkbox" id="enhShortsScroll" checked /><span>Shorts auto-scroll <small>next on ended</small></span></label>
       <div class="row"><input type="checkbox" id="enhSeekButtons" /><label for="enhSeekButtons" class="grow">Seek buttons</label><select id="enhSeekSecs" aria-label="Seek seconds">
         <option value="5">±5s</option>
         <option value="10" selected>±10s</option>
@@ -119,11 +119,11 @@
         <label class="cat"><input type="checkbox" id="sbSponsor" checked />Sponsor</label>
         <label class="cat"><input type="checkbox" id="sbIntro" checked />Intro</label>
         <label class="cat"><input type="checkbox" id="sbOutro" checked />Outro</label>
-        <label class="cat"><input type="checkbox" id="sbInteraction" />Subscribe reminder</label>
-        <label class="cat"><input type="checkbox" id="sbSelfpromo" />Self-promo</label>
-        <label class="cat"><input type="checkbox" id="sbMusicOfftopic" />Off-topic music</label>
-        <label class="cat"><input type="checkbox" id="sbPreview" />Recap / preview</label>
-        <label class="cat"><input type="checkbox" id="sbFiller" />Filler</label>
+        <label class="cat"><input type="checkbox" id="sbInteraction" checked />Subscribe reminder</label>
+        <label class="cat"><input type="checkbox" id="sbSelfpromo" checked />Self-promo</label>
+        <label class="cat"><input type="checkbox" id="sbMusicOfftopic" checked />Off-topic music</label>
+        <label class="cat"><input type="checkbox" id="sbPreview" checked />Recap / preview</label>
+        <label class="cat"><input type="checkbox" id="sbFiller" checked />Filler</label>
       </div>
     </section>
 
@@ -135,7 +135,7 @@
 
     <section class="group">
       <h2 class="section-title">Themes <small>v2 · dramatic default · controls kept outside labels</small></h2>
-      <div class="row"><input type="checkbox" id="enhTheme" /><label for="enhTheme" class="grow">Dark theme</label><select id="enhThemePreset" aria-label="Theme preset">
+      <div class="row"><input type="checkbox" id="enhTheme" checked /><label for="enhTheme" class="grow">Dark theme</label><select id="enhThemePreset" aria-label="Theme preset">
         <option value="pure-black" selected>Pure Black</option>
         <option value="dracula">Dracula</option>
         <option value="mocha">Catppuccin-Mocha</option>
