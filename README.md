@@ -4,7 +4,7 @@
 
 **Adblock, Sponsor Skip & Enhancer — ultra-fast, privacy-first, 100% local.**
 
-[![Version](https://img.shields.io/badge/version-1.9.11-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
+[![Version](https://img.shields.io/badge/version-1.10.2-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
 [![Chrome](https://img.shields.io/badge/Chrome-MV3-green?style=flat-square&logo=googlechrome)](https://github.com/9M2PJU/trueblock-youtube-adblocker)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-yellow?style=flat-square)](LICENSE)
 [![No tracking](https://img.shields.io/badge/tracking-none-blue?style=flat-square)](#-privacy)
@@ -61,15 +61,16 @@ Same codebase, verified with Mozilla's `web-ext lint` (0 errors). Two things cha
 | Declutter | Hide Shorts everywhere · hide end cards / live chat / paid banner · hide posts, playlists, member-only, playables · videos-per-row 1–8 · unwrap redirect links + strip tracker params · block 0–9 key seeking |
 | Audio | Volume boost 150 / 200 / 300 % · **audiophile 10-band EQ** (ISO bands, preamp with auto-clip-guard, global Q, 7 presets + full custom sliders) · **limiter** (−3dB/20:1 safety net) · **spectrum overlay** (live analyzer), one shared WebAudio graph |
 
-### 🤝 SponsorBlock (crowdsourced, on by default)
+### 🤝 SponsorBlock + 👍 Return YouTube Dislike (crowdsourced, on by default)
 
 Skips **in-video** sponsor reads, intros, outros and more using the community database — clean-room client of the public read API, no SponsorBlock code vendored:
 
 - 8 categories: sponsor · intro · outro · subscribe-reminder · self-promo · off-topic music · recap/preview · filler (skip-type segments only)
 - Auto-skips with a toast (`Skipped sponsor (12s) · via SponsorBlock`), per-video cache, never fights the ad-skipper, fails open offline
 - Fetched through the background worker: page-origin requests are CORS-blocked by the API, the worker's host permission is not
+- **Return YouTube Dislike:** refills the native dislike (and like) count via `returnyoutubedislikeapi.com/votes`, exact counts in the tooltip, optional like-ratio bar under the buttons, works on watch + Shorts, fails open offline
 
-> Privacy note: this sends the current **video ID** to `sponsor.ajayyy.com` to fetch segments (untick to disable). Everything else in TrueBlock stays fully local.
+> Privacy note: this sends the current **video ID** to `sponsor.ajayyy.com` (segments) and `returnyoutubedislikeapi.com` (counts) — untick either to disable. Everything else in TrueBlock stays fully local.
 
 ### 🎨 Themes (v2 — rebuilt to actually stick)
 
@@ -88,6 +89,7 @@ src/
   inject.js            # MAIN-world player-response cleaner
   content.js           # ad skipper + DOM cleaner + anti-adblock
   sponsorblock.js      # crowdsourced sponsor skipping, on by default (original API client)
+  ryd.js               # Return YouTube Dislike counts, on by default (original API client)
   enhancements.js      # 22 optional enhancements + v2 themes (~40 KB vanilla JS)
   content.css          # cosmetic ad hiding
   background.js        # badge counter + stats
@@ -101,7 +103,7 @@ Zero dependencies. Zero build step. Just load the folder.
 
 ## 🔒 Privacy
 
-- **No servers, no analytics, no telemetry.** Everything runs on-device — except the **SponsorBlock** lookup (on by default), which sends only the video ID to `sponsor.ajayyy.com`.
+- **No servers, no analytics, no telemetry.** Everything runs on-device — except the **SponsorBlock** + **Return YouTube Dislike** lookups (on by default), which send only the video ID to `sponsor.ajayyy.com` / `returnyoutubedislikeapi.com`.
 - Settings live in `chrome.storage` only. Nothing ever leaves your browser.
 - Permissions are minimal: ad/tracker hosts + `declarativeNetRequest` + `storage`. No `<all_urls>`, no tab reading, no history access.
 
@@ -120,10 +122,14 @@ Free forever, no ads, no tracking. If TrueBlock saves your sanity, chip in:
 - Equalizer concept: [aashishjhaa/eq-for-youtube](https://github.com/aashishjhaa/eq-for-youtube) (no license declared — original implementation, nothing copied; standard 10-band WebAudio design).
 - EQ curves informed by SFX Engine's [7 Best Equalizer Settings for Music](https://sfxengine.com/blog/best-equalizer-settings-for-music) (vocal presence, mud/sibilance control, Fletcher-Munson loudness, rock body+bite).
 - In-video sponsor skipping inspired by [ajayyy/SponsorBlock](https://github.com/ajayyy/SponsorBlock) (GPL-3.0) via its public read API — original client code, nothing copied.
+- Dislike counts via [Return YouTube Dislike](https://returnyoutubedislike.com) public read API — original client code, nothing copied.
 - License: [GPL-3.0](LICENSE) — Copyright © 2026 9M2PJU. PRs welcome — especially updated selectors when YouTube moves things around (`SKIP_SELECTORS` in `src/content.js`).
 
 ## 📝 Changelog
 
+- **v1.10.2** — Store resubmission: version bump only (AMO validation-warning fixes shipped in v1.10.1)
+- **v1.10.1** — Shorts fixes: SponsorBlock now skips segments on `/shorts/` (was watch-only), sponsored-Shorts auto-advance hardened (badge-first detect + throttle), reel ad endpoints stripped, volume/speed/EQ/timestamp tools work on the active reel
+- **v1.10.0** — Return YouTube Dislike: crowdsourced like/dislike counts refill native buttons, exact totals in tooltip, optional like-ratio bar (watch + Shorts, fails open, toggle for fully offline)
 - **v1.9.11** — Fix "AudioContext was not allowed to start" warning: EQ/boost/limiter graph now waits for first user gesture; no more pre-gesture resume, no muted-audio window
 - **v1.9.10** — Reverted one-time autoplay heal (no 1.9.5 users exist to rescue; touch-tracking restore stands)
 - **v1.9.9** — Store-submission build (per-browser manifests via build.sh)

@@ -72,8 +72,10 @@
     if (!settings.enabled || !settings.blockVideoAds) return;
     try {
       // Single cheap gate for the whole 20Hz loop: no ad classes, no ad work.
+      // Shorts videos don't use .html5-main-video / .ad-showing — they are
+      // handled by the Sponsored-Shorts advancer below, so keep this gate cheap.
       const adActive = !!document.querySelector('.html5-video-player.ad-showing, .html5-video-player.ad-interrupting');
-      const videos = adActive ? document.querySelectorAll('video.video-stream.html5-main-video, video.html5-main-video') : [];
+      const videos = adActive ? document.querySelectorAll('video.video-stream.html5-main-video, video.html5-main-video, ytd-reel-video-renderer video, #shorts-player video') : [];
       let skipping = false;
       for (const video of videos) {
         const player = video.closest('.html5-video-player') || document.getElementById('movie_player');
@@ -153,9 +155,19 @@
       if (settings.blockShortsAds && location.pathname.startsWith('/shorts')) {
         try {
           const active = document.querySelector('ytd-reel-video-renderer[is-active]');
-          if (active && /sponsored/i.test(active.textContent.slice(0, 500))) {
-            const nextBtn = document.querySelector('#navigation-button-down button, ytd-shorts #navigation-button-down button');
-            if (nextBtn) { nextBtn.click(); reportBlocked(1); }
+          if (active) {
+            // Explicit badge first (stable), full-text fallback (localised labels vary).
+            const badge = active.querySelector('[overlay-style="SPONSORED"], .badge-style-type-ad, ytd-badge-supported-renderer');
+            const badgeText = (badge ? badge.textContent : '') || '';
+            const fullText = active.textContent || '';
+            const isAd = /sponsor/i.test(badgeText) || /sponsored/i.test(fullText.slice(0, 4000));
+            // Throttle: one advance per second max (sweep runs every 1.5s + on mutation)
+            const now = Date.now();
+            if (isAd && (now - (removeBanners.__tb_shortsAt || 0) > 1000)) {
+              removeBanners.__tb_shortsAt = now;
+              const nextBtn = document.querySelector('#navigation-button-down button, ytd-shorts #navigation-button-down button, button[aria-label="Next"]');
+              if (nextBtn) { nextBtn.click(); reportBlocked(1); }
+            }
           }
         } catch {}
       }

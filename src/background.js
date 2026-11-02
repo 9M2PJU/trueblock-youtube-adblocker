@@ -73,16 +73,10 @@ try {
   });
 } catch {}
 
-// Count network-level blocks from declarativeNetRequest as well
+// Network-level block counting lives in background-dnr.js (Chromium-only API).
+// The Firefox package excludes that file, so this import fails there by design.
 try {
-  if (chrome.declarativeNetRequest && chrome.declarativeNetRequest.onRuleMatchedDebug) {
-    chrome.declarativeNetRequest.onRuleMatchedDebug.addListener((info) => {
-      sessionBlocked += 1;
-      totalBlocked += 1;
-      try { chrome.storage.local.set({ totalBlocked }); } catch {}
-      updateBadge();
-    });
-  }
+  importScripts('background-dnr.js');
 } catch {}
 
 // SponsorBlock API proxy: content scripts fetch with the page's origin and get
@@ -129,6 +123,52 @@ try {
       const cats = Array.isArray(msg.categories) ? msg.categories.filter((c) => typeof c === 'string') : [];
       sbFetch(msg.videoID.slice(0, 32), cats.slice(0, 12)).then((segs) => {
         try { sendResponse({ segs }); } catch {}
+      });
+      return true; // async response
+    }
+  });
+} catch {}
+
+// Return YouTube Dislike proxy: page-origin fetches are CORS-limited, so the
+// worker (covered by host_permissions) fetches instead. Fail-open cache.
+const RYD_API = 'https://returnyoutubedislikeapi.com/votes?videoId=';
+const rydCache = new Map(); // videoID -> { at, likes, dislikes }
+async function rydFetch(videoID) {
+  const cached = rydCache.get(videoID);
+  if (cached && Date.now() - cached.at < 10 * 60 * 1000) return cached;
+  let out = { likes: null, dislikes: null };
+  try {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 8000);
+    try {
+      const res = await fetch(`${RYD_API}${encodeURIComponent(videoID)}`, { signal: ctl.signal });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Number.isFinite(data.likes) && Number.isFinite(data.dislikes)) {
+          out = { likes: data.likes, dislikes: data.dislikes };
+        }
+      }
+    } catch {
+      // offline / timeout / unknown video — fail open
+    } finally {
+      clearTimeout(timer);
+    }
+  } catch {}
+  if (out.likes !== null) {
+    rydCache.set(videoID, { at: Date.now(), ...out });
+    if (rydCache.size > 100) {
+      const first = rydCache.keys().next().value;
+      rydCache.delete(first);
+    }
+    return rydCache.get(videoID);
+  }
+  return out;
+}
+try {
+  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (msg && msg.type === 'tb-ryd-fetch' && typeof msg.videoID === 'string' && msg.videoID) {
+      rydFetch(msg.videoID.slice(0, 32)).then((v) => {
+        try { sendResponse(v); } catch {}
       });
       return true; // async response
     }

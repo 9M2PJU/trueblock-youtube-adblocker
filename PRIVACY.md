@@ -8,7 +8,7 @@ TrueBlock runs entirely on your device. It has no accounts, no analytics,
 no telemetry, and no servers of its own. Settings stay in your browser's
 `chrome.storage` and never leave it.
 
-## The one exception: SponsorBlock lookups (on by default)
+## The exceptions: SponsorBlock + RYD lookups (on by default)
 
 To skip in-video sponsor segments, the extension sends the **current YouTube
 video ID** to the public SponsorBlock API (`sponsor.ajayyy.com`) to fetch
@@ -16,11 +16,18 @@ community-submitted skip times. Nothing else is transmitted — no identity,
 no history, no cookies. Turn the feature off in the popup to go fully
 offline; the ad blocker and all other features keep working without it.
 
+To restore dislike counts, the extension sends the **current YouTube video
+ID** to the public Return YouTube Dislike API
+(`returnyoutubedislikeapi.com`) to fetch crowdsourced like/dislike totals.
+Same deal — video ID only, plain JSON counts back, no code executed. Turn it
+off in the popup to go fully offline.
+
 ## Permissions — why each is needed
 
 - **Ad/tracker hosts** (`youtube.com`, `googlesyndication.com`,
   `doubleclick.net`, `googleadservices.com`): blocking ad and tracking requests.
 - **SponsorBlock API host** (`sponsor.ajayyy.com`): fetching skip segments.
+- **RYD API host** (`returnyoutubedislikeapi.com`): fetching dislike counts.
 - **declarativeNetRequest**: enforcing the network blocklist.
 - **storage**: saving your toggles and counters locally.
 - **alarms**: resetting the daily session counter.

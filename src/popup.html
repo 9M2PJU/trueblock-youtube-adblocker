@@ -128,6 +128,12 @@
     </section>
 
     <section class="group">
+      <h2 class="section-title">Return YouTube Dislike <small>crowdsourced counts · <a href="https://returnyoutubedislike.com" target="_blank" rel="noopener">returnyoutubedislike.com</a> · on by default, queries returnyoutubedislikeapi.com</small></h2>
+      <label class="row"><input type="checkbox" id="rydEnabled" /><span>Show dislike count <small>sends video ID to RYD API</small></span></label>
+      <label class="row"><input type="checkbox" id="rydBar" /><span>Like-ratio bar <small>under like / dislike buttons</small></span></label>
+    </section>
+
+    <section class="group">
       <h2 class="section-title">Themes <small>v2 · dramatic default · controls kept outside labels</small></h2>
       <div class="row"><input type="checkbox" id="enhTheme" /><label for="enhTheme" class="grow">Dark theme</label><select id="enhThemePreset" aria-label="Theme preset">
         <option value="pure-black" selected>Pure Black</option>
@@ -164,7 +170,7 @@
         <button id="aboutClose" class="cta about-close">Close</button>
       </div>
     </div>
-    <p class="privacy">Local-first · no tracking · only SponsorBlock sends video IDs (toggle it off for fully offline)</p>
+    <p class="privacy">Local-first · no tracking · SponsorBlock + RYD send video IDs (toggle off for fully offline)</p>
   </div>
   <script src="popup.js"></script>
 </body>

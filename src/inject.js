@@ -9,7 +9,9 @@
 
   const AD_KEYS = new Set([
     'adPlacements', 'adSlots', 'playerAds', 'adBreakHeartbeatParams',
-    'adVideoId', 'adCpn', 'adLogData'
+    'adVideoId', 'adCpn', 'adLogData',
+    // Shorts / feed ad wrappers (stripped the same way as playerAds)
+    'adSlotRenderer', 'reelAds', 'shortsAds'
   ]);
 
   function cleanPlayerResponse(obj, depth = 0) {
@@ -42,9 +44,12 @@
 
   function looksLikePlayerResponse(text) {
     // cheap pre-check before expensive JSON.parse
-    return text.length > 200 &&
-      (text.includes('adPlacements') || text.includes('playerAds')) &&
-      (text.includes('streamingData') || text.includes('videoDetails') || text.includes('playabilityStatus'));
+    if (text.length <= 200) return false;
+    const hasAds = text.includes('adPlacements') || text.includes('playerAds') ||
+      text.includes('adSlotRenderer') || text.includes('promotedVideoRenderer');
+    if (!hasAds) return false;
+    return text.includes('streamingData') || text.includes('videoDetails') ||
+      text.includes('playabilityStatus') || text.includes('reel') || text.includes('shorts');
   }
 
   function cleanJsonText(text) {
@@ -83,7 +88,9 @@
         url.includes('/youtubei/v1/next') ||
         url.includes('/youtubei/v1/browse') ||
         url.includes('/youtubei/v1/search') ||
-        url.includes('/youtubei/v1/guide')
+        url.includes('/youtubei/v1/guide') ||
+        url.includes('/youtubei/v1/reel/') ||
+        url.includes('/youtubei/v1/shorts/')
       );
       const resp = await origFetch.apply(this, arguments);
       if (!isPlayerApi) return resp;
@@ -128,7 +135,7 @@
             const val = origResponseText.get.call(this);
             const url = this.__tb_url || '';
             if (typeof val === 'string' && val.length > 200 &&
-              (url.includes('/youtubei/v1/player') || url.includes('/youtubei/v1/next')) &&
+              (url.includes('/youtubei/v1/player') || url.includes('/youtubei/v1/next') || url.includes('/youtubei/v1/reel/')) &&
               looksLikePlayerResponse(val)) {
               return cleanJsonText(val);
             }

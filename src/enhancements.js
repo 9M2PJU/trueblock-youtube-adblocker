@@ -65,6 +65,13 @@
   const on = () => s.enabled;
   const player = () => document.querySelector('#movie_player');
   const isWatch = () => location.pathname === '/watch';
+  const shortsID = () => { try { const m = location.pathname.match(/^\/shorts\/([^/?#]+)/); return m ? m[1] : ''; } catch { return ''; } };
+  const watchID = () => { try { return new URLSearchParams(location.search).get('v') || ''; } catch { return ''; } };
+  const currentVideoID = () => watchID() || shortsID();
+  // Watch uses video.html5-main-video; Shorts pre-renders neighbours — only the
+  // active reel is audible, so prefer it (fallback covers #shorts-player).
+  const activeVideo = () => document.querySelector('video.html5-main-video') ||
+    document.querySelector('ytd-reel-video-renderer[is-active] video, #shorts-player video');
   const isTheater = () => {
     const grid = document.querySelector('ytd-watch-flexy, ytd-watch-grid');
     return !!grid && grid.hasAttribute('theater');
@@ -161,7 +168,11 @@
       try {
         if (!on() || !s.enhRememberVolume) return;
         const v = e.target;
-        if (!(v instanceof HTMLVideoElement) || !v.classList.contains('html5-main-video')) return;
+        if (!(v instanceof HTMLVideoElement)) return;
+        // Watch videos carry html5-main-video; Shorts videos live in the active reel.
+        const isMain = v.classList.contains('html5-main-video');
+        const isShortsVid = !!v.closest('ytd-reel-video-renderer, #shorts-player, ytd-shorts');
+        if (!isMain && !isShortsVid) return;
         const p = v.closest('.html5-video-player');
         if (p && (p.classList.contains('ad-showing') || p.classList.contains('ad-interrupting'))) return;
         savedVolume = v.volume;
@@ -173,7 +184,7 @@
   function volumeSweep() {
     if (!on() || !s.enhRememberVolume || savedVolume === null) return;
     try {
-      const v = document.querySelector('video.html5-main-video');
+      const v = activeVideo();
       if (!v) return;
       if (Math.abs(v.volume - savedVolume) > 0.01) { try { v.volume = savedVolume; } catch {} }
       if (v.muted !== savedMuted && !v.closest('.html5-video-player.ad-showing')) { try { v.muted = savedMuted; } catch {} }
@@ -241,7 +252,7 @@
   function speedSweep() {
     if (!on() || !s.enhRememberSpeed || !savedSpeed || savedSpeed === 1) return;
     try {
-      const v = document.querySelector('video.html5-main-video');
+      const v = activeVideo();
       if (!v) return;
       const p = v.closest('.html5-video-player');
       if (p && (p.classList.contains('ad-showing') || p.classList.contains('ad-interrupting'))) return;
@@ -284,7 +295,7 @@ html.tb-hide-shorts ytd-rich-shelf-renderer:has([is-shorts]),
 html.tb-hide-shorts yt-tab-shape[tab-title="Shorts"]{display:none!important}
 html.tb-hide-shorts ytd-video-renderer:has([overlay-style="SHORTS"]){display:none!important}
 html.tb-hide-shorts ytd-watch-next-secondary-results-renderer ytd-reel-shelf-renderer:has(#title-container){display:none!important}
-html.tb-hide-shorts a[href^="/shorts/"].yt-simple-endpoint{pointer-events:none}`;
+html.tb-hide-shorts a[href^="/shorts/"].yt-simple-endpoint{display:none!important}`;
   function shortsCssSweep() {
     try {
       const want = on() && s.enhHideShorts;
@@ -409,7 +420,7 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
     // flattening to neutral at full volume — scaled from the live video volume.
     if (s.enhEqPreset === 'loudness') {
       try {
-        const vv = document.querySelector('video.html5-main-video');
+        const vv = activeVideo();
         const vol = vv && !vv.muted ? vv.volume : 1;
         const k = Math.min(1, Math.max(0, 1 - vol * 1.1));
         return base.map((x) => Math.round(x * k * 2) / 2);
@@ -468,7 +479,7 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
   }
   function boostSweep() {
     try {
-      const v = document.querySelector('video.html5-main-video');
+      const v = activeVideo();
       if (!v) return;
       const want = on() && s.enhVolumeBoost ? parseFloat(s.enhBoostValue) || 2 : 1;
       if (want <= 1 && !audioGraphs.get(v)) return; // off + no graph: nothing to do
@@ -490,7 +501,7 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
       // Key excludes live gains: dynamic loudness reshapes them on every volume
       // step, which must not re-toast (filters still follow every sweep).
       const key = `${enabled}|${s.enhEqPreset}|${preDb}|${q}`;
-      const v = document.querySelector('video.html5-main-video');
+      const v = activeVideo();
       if (!v) return;
       const active = enabled && (gains.some((d) => d !== 0) || preDb !== 0);
       if (!active && !audioGraphs.get(v)) { lastEqKey = key; eqInit = true; return; }
@@ -531,7 +542,7 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
   /* 9b) Limiter (clip safety net) + spectrum overlay tap. */
   function limiterSweep() {
     try {
-      const v = document.querySelector('video.html5-main-video');
+      const v = activeVideo();
       const g = v ? audioGraphs.get(v) : null;
       if (!g) return;
       const wantOn = on() && s.enhLimiter;
@@ -549,7 +560,7 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
     specRAF = 0;
     let want = false;
     try {
-      const v = on() && s.enhSpectrum ? document.querySelector('video.html5-main-video') : null;
+      const v = on() && s.enhSpectrum ? activeVideo() : null;
       const g = v ? audioGraphs.get(v) : null;
       const box = v ? v.closest('.html5-video-player') : null;
       let cv = document.getElementById('tb-spectrum');
@@ -620,16 +631,16 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
   }
   function handleEnhBtn(id) {
     try {
-      const v = document.querySelector('video.html5-main-video');
+      const v = activeVideo();
       if (id === 'tb-btn-loop' && v) {
         if (v.hasAttribute('loop')) { v.removeAttribute('loop'); toast('Loop off'); }
         else { v.setAttribute('loop', ''); toast('Loop on'); }
         syncLoopBtn();
       } else if (id === 'tb-btn-stamp') {
         if (!v) return;
-        const vid = new URLSearchParams(location.search).get('v') || '';
+        const vid = currentVideoID() || '';
         const t = Math.floor(v.currentTime);
-        const url = `https://youtu.be/${vid}?t=${t}s`;
+        const url = vid ? `https://youtu.be/${vid}?t=${t}s` : location.href;
         try { navigator.clipboard.writeText(url).then(() => toast('Timestamp link copied'), () => toast(url)); }
         catch { toast(url); }
       } else if (id === 'tb-btn-shot') {
@@ -659,7 +670,7 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
       c.toBlob((blob) => {
         if (!blob) { toast('Screenshot blocked on this video'); return; }
         try {
-          const vid = new URLSearchParams(location.search).get('v') || 'video';
+          const vid = currentVideoID() || 'video';
           const a = document.createElement('a');
           a.href = URL.createObjectURL(blob);
           a.download = `trueblock-${vid}-${Math.floor(v.currentTime)}s.png`;
@@ -672,7 +683,7 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
   }
   function syncLoopBtn() {
     try {
-      const v = document.querySelector('video.html5-main-video');
+      const v = activeVideo();
       const b = document.getElementById('tb-btn-loop');
       if (b && v) { b.style.opacity = v.hasAttribute('loop') ? '1' : '.9'; b.style.textShadow = v.hasAttribute('loop') ? '0 0 6px #3ea6ff' : 'none'; }
     } catch {}

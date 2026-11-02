@@ -59,3 +59,19 @@ html.tb-skipping-ad .html5-video-player.ad-showing,
 html.tb-skipping-ad .html5-video-player.ad-interrupting {
   background: #000 !important;
 }
+
+/* TrueBlock Return YouTube Dislike — like-ratio bar under the buttons */
+#tb-ryd-bar {
+  display: flex !important;
+  height: 3px !important;
+  border-radius: 999px !important;
+  overflow: hidden !important;
+  margin: 2px 8px 0 !important;
+  background: rgba(127,127,127,.35) !important;
+  flex-basis: 100% !important;
+  width: calc(100% - 16px) !important;
+}
+#tb-ryd-bar .tb-ryd-like { background: #3ea6ff !important; height: 100% !important; }
+#tb-ryd-bar .tb-ryd-dislike { background: #f03a3a !important; height: 100% !important; }
+segmented-like-dislike-button-view-model,
+ytd-segmented-like-dislike-button-renderer { flex-wrap: wrap !important; }

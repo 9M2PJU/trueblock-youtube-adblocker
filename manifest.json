@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "TrueBlock for YouTube",
   "short_name": "TrueBlock YT",
-  "version": "1.9.11",
+  "version": "1.10.2",
   "description": "TrueBlock: adblock, sponsor skip & enhancer for YouTube. Blocks ads, skips sponsors. Private, local-first.",
   "author": "9M2PJU",
   "homepage_url": "https://hamradio.my",
@@ -10,7 +10,7 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "trueblock@hamradio.my",
-      "strict_min_version": "140.0",
+      "strict_min_version": "142.0",
       "data_collection_permissions": {
         "required": ["websiteActivity", "websiteContent"]
       }
@@ -43,7 +43,8 @@
     "*://*.googlesyndication.com/*",
     "*://*.doubleclick.net/*",
     "*://*.googleadservices.com/*",
-    "https://sponsor.ajayyy.com/*"
+    "https://sponsor.ajayyy.com/*",
+    "https://returnyoutubedislikeapi.com/*"
   ],
   "content_scripts": [
     {
@@ -55,7 +56,7 @@
     },
     {
       "matches": ["*://*.youtube.com/*", "*://*.youtube-nocookie.com/*"],
-      "js": ["src/content.js", "src/enhancements.js", "src/sponsorblock.js"],
+      "js": ["src/content.js", "src/enhancements.js", "src/sponsorblock.js", "src/ryd.js"],
       "css": ["src/content.css"],
       "run_at": "document_start",
       "all_frames": false

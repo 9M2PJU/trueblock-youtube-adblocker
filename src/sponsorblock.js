@@ -104,7 +104,13 @@
   }
 
   function videoID() {
-    try { return new URLSearchParams(location.search).get('v') || ''; }
+    try {
+      if (location.pathname === '/watch') return new URLSearchParams(location.search).get('v') || '';
+      // Shorts: /shorts/VIDEOID (same pattern as ryd.js)
+      const m = location.pathname.match(/^\/shorts\/([^/?#]+)/);
+      if (m) return m[1];
+      return '';
+    }
     catch { return ''; }
   }
 
@@ -116,6 +122,11 @@
         if (!on()) return;
         const id = videoID();
         if (!id || id !== curID) return;
+        // On Shorts only the active reel is audible — ignore preloaded neighbours
+        if (location.pathname.startsWith('/shorts')) {
+          const reel = video.closest('ytd-reel-video-renderer');
+          if (reel && !reel.hasAttribute('is-active')) return;
+        }
         const entry = cache.get(id);
         if (!entry || !entry.segs.length) return;
         const t = video.currentTime;
@@ -134,10 +145,12 @@
 
   function sweep() {
     try {
-      const id = location.pathname === '/watch' ? videoID() : '';
+      const id = videoID();
       if (id !== curID) refresh(id);
-      const v = document.querySelector('video.html5-main-video');
-      if (v) guard(v);
+      // Watch + Shorts: hook every video element (Shorts pre-renders neighbours)
+      for (const v of document.querySelectorAll('video.html5-main-video, ytd-reel-video-renderer video, #shorts-player video')) {
+        if (v) guard(v);
+      }
     } catch {}
   }
 

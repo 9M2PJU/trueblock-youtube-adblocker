@@ -40,7 +40,9 @@ const DEFAULTS = {
   enhLinkFix: false,
   sbEnabled: true,
   sbSponsor: true, sbIntro: true, sbOutro: true, sbInteraction: false,
-  sbSelfpromo: false, sbMusicOfftopic: false, sbPreview: false, sbFiller: false
+  sbSelfpromo: false, sbMusicOfftopic: false, sbPreview: false, sbFiller: false,
+  rydEnabled: true,
+  rydBar: true
 };
 const ids = Object.keys(DEFAULTS);
 
