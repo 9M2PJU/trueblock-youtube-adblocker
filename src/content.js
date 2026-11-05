@@ -68,6 +68,32 @@
     return player && (player.classList.contains('ad-showing') || player.classList.contains('ad-interrupting'));
   }
 
+  // Stash of pre-ad playback state. The ad-burner below forces mute + 16x;
+  // without a restore, a mid-roll hit on pause->replay strands the video at
+  // 16x/muted — the "loud blast after replay" (worse through EQ/boost gain).
+  // Stashed values are restored as soon as the player leaves the ad state.
+  const adStash = new Map(); // video -> { rate, muted, volume }
+  function restoreAdState() {
+    if (!adStash.size) return;
+    for (const [video, st] of adStash) {
+      try {
+        if (!video.isConnected) { adStash.delete(video); continue; }
+        const player = video.closest('.html5-video-player');
+        if (playerIsShowingAd(player)) continue; // still burning — keep forced values
+        try { if (video.playbackRate > 4) video.playbackRate = st.rate || 1; } catch {}
+        try {
+          // Only touch mute/volume if they're still at our forced values —
+          // anything else is the user's own mid-ad choice and wins.
+          if (video.muted && video.volume === 0) {
+            video.muted = !!st.muted;
+            video.volume = st.volume;
+          }
+        } catch {}
+      } catch {}
+      adStash.delete(video);
+    }
+  }
+
   function skipVideoAds() {
     if (!settings.enabled || !settings.blockVideoAds) return;
     try {
@@ -75,6 +101,7 @@
       // Shorts videos don't use .html5-main-video / .ad-showing — they are
       // handled by the Sponsored-Shorts advancer below, so keep this gate cheap.
       const adActive = !!document.querySelector('.html5-video-player.ad-showing, .html5-video-player.ad-interrupting');
+      if (!adActive) restoreAdState();
       const videos = adActive ? document.querySelectorAll('video.video-stream.html5-main-video, video.html5-main-video, ytd-reel-video-renderer video, #shorts-player video') : [];
       let skipping = false;
       for (const video of videos) {
@@ -83,6 +110,15 @@
         skipping = true;
         try {
           // Mute + max speed so any unskippable ad burns through in ms
+          if (!adStash.has(video)) {
+            try {
+              adStash.set(video, {
+                rate: (Number.isFinite(video.playbackRate) && video.playbackRate <= 4) ? video.playbackRate : 1,
+                muted: video.muted,
+                volume: video.volume
+              });
+            } catch { adStash.set(video, { rate: 1, muted: true, volume: 0 }); }
+          }
           video.muted = true;
           video.volume = 0;
           try { video.playbackRate = 16; } catch { try { video.playbackRate = 8; } catch {} }

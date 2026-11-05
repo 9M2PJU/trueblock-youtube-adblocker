@@ -4,10 +4,10 @@
 # manifest variant that its browser accepts. Everything else is identical.
 set -euo pipefail
 cd "$(dirname "$0")"
-rm -rf dist TrueBlock-Chrome.zip TrueBlock-Firefox.zip
-mkdir -p dist/chrome dist/firefox
+rm -rf dist TrueBlock-Chrome.zip TrueBlock-Firefox.zip /tmp/opencode/TrueBlock-Chrome.zip /tmp/opencode/TrueBlock-Firefox.zip
+mkdir -p dist/chrome dist/firefox /tmp/opencode
 
-FILES="rules src icons assets LICENSE README.md PRIVACY.md .github/FUNDING.yml"
+FILES="rules src icons LICENSE README.md PRIVACY.md"
 cp manifest.json dist/chrome/manifest.json
 python3 - <<'EOF'
 import json
@@ -18,8 +18,11 @@ print('firefox manifest: background.scripts, no service_worker')
 EOF
 
 for target in chrome firefox; do
-  cp -r rules src icons assets LICENSE README.md PRIVACY.md .github "dist/$target/"
+  cp -r rules src icons LICENSE README.md PRIVACY.md "dist/$target/"
 done
+# background-dnr.js uses Chrome-only declarativeNetRequest.onRuleMatchedDebug:
+# keep it in the Chrome zip, exclude from Firefox (importScripts is try/caught).
+rm -f dist/firefox/src/background-dnr.js
 python3 -c "import json; m=json.load(open('dist/chrome/manifest.json')); assert 'service_worker' in m['background'] and 'scripts' not in m['background']; m=json.load(open('dist/firefox/manifest.json')); assert m['background']=={'scripts':['src/background.js']}; print('both manifests valid, keys correct')"
 (cd dist/chrome && zip -qr /tmp/opencode/TrueBlock-Chrome.zip .) 
 (cd dist/firefox && zip -qr /tmp/opencode/TrueBlock-Firefox.zip .)

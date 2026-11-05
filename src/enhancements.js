@@ -186,8 +186,12 @@
     try {
       const v = activeVideo();
       if (!v) return;
+      // Never fight the ad-skipper: content.js owns mute/volume while an ad
+      // is showing — restoring here unmutes the ad (loud 16x blast through EQ).
+      const p = v.closest('.html5-video-player');
+      if (p && (p.classList.contains('ad-showing') || p.classList.contains('ad-interrupting'))) return;
       if (Math.abs(v.volume - savedVolume) > 0.01) { try { v.volume = savedVolume; } catch {} }
-      if (v.muted !== savedMuted && !v.closest('.html5-video-player.ad-showing')) { try { v.muted = savedMuted; } catch {} }
+      if (v.muted !== savedMuted) { try { v.muted = savedMuted; } catch {} }
     } catch {}
   }
 
@@ -392,9 +396,13 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
     } catch {}
     return false;
   }
-  function tryResumeAudio(g) {
+  function tryResumeAudio(g, video) {
     try {
       if (!g || !g.ctx || g.ctx.state !== 'suspended') return;
+      // A paused element flows silence: resuming now just piles automation
+      // onto a frozen currentTime, which fires as a burst on replay. The
+      // play handler below resumes exactly when signal returns.
+      if (video && video.paused) return;
       if (!hasAudioGesture()) return; // no sticky activation yet: stay quiet, no warning
       g.ctx.resume().catch(() => {});
     } catch {}
@@ -428,9 +436,31 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
     }
     return base;
   }
+  // Pause/resume hardening: while paused the element flows silence, so park
+  // the context suspended (no stale filter/comp state, no automation pile-up
+  // on a frozen currentTime). On play, resume exactly when signal returns —
+  // this removes the resume thump/burst through EQ + boost + limiter.
+  function hookAudioPause(video, g) {
+    try {
+      if (!video || !g || video.__tb_pauseHook) return;
+      video.__tb_pauseHook = true;
+      video.addEventListener('pause', () => {
+        try {
+          const gg = audioGraphs.get(video);
+          if (gg && gg.ctx && gg.ctx.state === 'running') gg.ctx.suspend().catch(() => {});
+        } catch {}
+      });
+      video.addEventListener('play', () => {
+        try {
+          const gg = audioGraphs.get(video);
+          if (gg) tryResumeAudio(gg, video);
+        } catch {}
+      });
+    } catch {}
+  }
   function ensureAudioGraph(video) {
     let g = audioGraphs.get(video);
-    if (g) return g;
+    if (g) { hookAudioPause(video, g); return g; }
     // Defer creation until a user gesture: routing audio through a suspended
     // context would mute the video until unlock, and resume() would warn.
     if (!hasAudioGesture()) return null;
@@ -471,6 +501,7 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
       analyser.connect(ctx.destination);
       g = { ctx, pre, filters, gain, comp, analyser };
       audioGraphs.set(video, g);
+      hookAudioPause(video, g);
       try { audioCtxs.add(ctx); } catch {}
     } catch {
       return null; // already routed / unsupported — leave element alone
@@ -486,8 +517,10 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
       const g = ensureAudioGraph(v);
       if (!g) return;
       try {
-        tryResumeAudio(g);
-        if (Math.abs(g.gain.gain.value - want) > 0.01) g.gain.gain.value = want;
+        tryResumeAudio(g, v);
+        if (v.paused) return; // no signal: don't pile automation on frozen currentTime
+        // Smooth ramp, never a hard assignment — hard jumps pop on replay.
+        if (Math.abs(g.gain.gain.value - want) > 0.01) g.gain.gain.setTargetAtTime(want, g.ctx.currentTime, 0.03);
       } catch {}
     } catch {}
   }
@@ -495,7 +528,14 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
     try {
       const enabled = on() && s.enhEQ;
       const gains = eqGains();
-      const preDb = enabled ? (Math.min(6, Math.max(-12, +s.enhEqPreamp || 0))) : 0;
+      const userPreDb = enabled ? (Math.min(6, Math.max(-12, +s.enhEqPreamp || 0))) : 0;
+      // Unity headroom (audiophile rule): preamp + peak boost must stay <= 0
+      // dB or loud passages clip. The popup applies this on preset change,
+      // but fresh installs (Rock +4dB, pre 0) and custom drags bypass it —
+      // enforce here so no setting can blast. Boosts only: cuts can't clip,
+      // so they must not force attenuation (matches popup.js auto-preamp).
+      const peak = enabled ? Math.max(0, ...gains) : 0;
+      const preDb = Math.min(userPreDb, -peak);
       const q = { narrow: 2, normal: 1, wide: 0.5 }[s.enhEqQ] || 1;
       const preGain = Math.pow(10, preDb / 20);
       // Key excludes live gains: dynamic loudness reshapes them on every volume
@@ -512,7 +552,8 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
         return;
       }
       try {
-        tryResumeAudio(g);
+        tryResumeAudio(g, v);
+        if (v.paused) return; // parked while paused — sweeps resume on play
         const t = g.ctx.currentTime;
         if (Math.abs(g.pre.gain.value - preGain) > 0.005) g.pre.gain.setTargetAtTime(preGain, t, 0.03);
         for (let i = 0; i < 10; i++) {
@@ -527,10 +568,10 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
           lastEqKey = key;
           eqInit = true;
           if (!first && enabled) {
-            const peak = Math.max(...gains.map(Math.abs));
-            let msg = peak === 0 && preDb === 0
+            const peakAbs = Math.max(...gains.map(Math.abs));
+            let msg = peakAbs === 0 && preDb === 0
               ? `EQ on (${EQ_NAMES[s.enhEqPreset] || 'Flat'} = neutral — pick Bass/V-Shape to hear it)`
-              : `EQ: ${EQ_NAMES[s.enhEqPreset] || s.enhEqPreset} (±${peak} dB, pre ${preDb >= 0 ? '+' : ''}${preDb} dB)`;
+              : `EQ: ${EQ_NAMES[s.enhEqPreset] || s.enhEqPreset} (±${peakAbs} dB, pre ${preDb >= 0 ? '+' : ''}${preDb} dB)`;
             if (g.ctx.state === 'suspended') msg += ' — tap page once to unlock audio';
             toast(msg);
           }
@@ -547,7 +588,8 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
       if (!g) return;
       const wantOn = on() && s.enhLimiter;
       try {
-        tryResumeAudio(g);
+        tryResumeAudio(g, v);
+        if (v.paused) return; // parked while paused — sweeps resume on play
         const t = g.ctx.currentTime;
         const th = wantOn ? -3 : 0, ra = wantOn ? 20 : 1;
         if (Math.abs(g.comp.threshold.value - th) > 0.01) g.comp.threshold.setTargetAtTime(th, t, 0.03);
@@ -767,7 +809,13 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
     'dracula':    { name: 'Dracula', color: '#bd93f9', bg: '#282a36', second: '#2e3140', hover: '#44475a', text: '#f8f8f2', dimmer: '#bcc2cd' },
     'mocha':      { name: 'Catppuccin-Mocha', color: '#cba6f7', bg: '#1e1e2e', second: '#181825', hover: '#313244', text: '#cdd6f4', dimmer: '#a6adc8' },
     'discord':    { name: 'Discord', color: '#7289da', bg: '#1e2124', second: '#2f3136', hover: '#484b51', text: '#ffffff', dimmer: '#ada8aa' },
-    'deep-dark':  { name: 'Deep-Dark', color: '#00adee', bg: '#111111', second: '#181818', hover: '#232323', text: '#eff0f1', dimmer: '#cccccc' }
+    'deep-dark':  { name: 'Deep-Dark', color: '#00adee', bg: '#111111', second: '#181818', hover: '#232323', text: '#eff0f1', dimmer: '#cccccc' },
+    'classic':    { name: 'Classic Red', color: '#ff0000', bg: '#0f0f0f', second: '#212121', hover: '#3d3d3d', text: '#ffffff', dimmer: '#aaaaaa' },
+    'nord':       { name: 'Nord', color: '#88c0d0', bg: '#2e3440', second: '#3b4252', hover: '#434c5e', text: '#eceff4', dimmer: '#d8dee9' },
+    'gruvbox':    { name: 'Gruvbox', color: '#fabd2f', bg: '#282828', second: '#3c3836', hover: '#504945', text: '#ebdbb2', dimmer: '#a89984' },
+    'tokyo':      { name: 'Tokyo Night', color: '#7aa2f7', bg: '#1a1b26', second: '#24283b', hover: '#414868', text: '#c0caf5', dimmer: '#9aa0b8' },
+    'solarized':  { name: 'Solarized', color: '#268bd2', bg: '#002b36', second: '#073642', hover: '#0f566b', text: '#eee8d5', dimmer: '#93a1a1' },
+    'forest':     { name: 'Forest', color: '#4caf50', bg: '#0d1f16', second: '#14291d', hover: '#1f3d2b', text: '#e8f5e9', dimmer: '#9db8a4' }
   };
   let lastThemeKey = '';
   let themeWarned = false;
@@ -784,7 +832,8 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
       + `html.tb-theme.tb-theme .ytp-play-progress{background:${a}!important}`
       + `html.tb-theme.tb-theme .ytp-scrubber-button{background:${a}!important}`
       + `html.tb-theme.tb-theme .ytp-volume-slider-handle:before{background:${a}!important}`
-      + `html.tb-theme.tb-theme a.yt-simple-endpoint{color:${a}}`;
+      + `html.tb-theme.tb-theme a.yt-simple-endpoint{color:${a}}`
+      + `html.tb-theme.tb-theme ytd-masthead svg #youtube-red-paths path{fill:${a}!important}`;
     return css;
   }
   function themeSweep() {

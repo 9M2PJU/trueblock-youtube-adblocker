@@ -157,14 +157,28 @@ document.querySelectorAll('.eqband').forEach((sl) => {
     const sel = document.getElementById('enhEqPreset');
     if (sel) sel.value = 'custom';
   });
-  sl.addEventListener('change', flushSaves);
+  sl.addEventListener('change', () => flushSaves());
 });
 document.getElementById('enhEqPreamp')?.addEventListener('input', (e) => {
   const pv = document.getElementById('enhEqPreampVal');
   if (pv) pv.textContent = ((+e.target.value > 0 ? '+' : '') + e.target.value) + 'dB';
   saveSoon({ enhEqPreamp: e.target.value });
 });
-document.getElementById('enhEqPreamp')?.addEventListener('change', flushSaves);
+document.getElementById('enhEqPreamp')?.addEventListener('change', () => flushSaves());
+
+// Tabs: single-purpose sections instead of one giant scrolling list.
+document.querySelectorAll('.tab').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach((b) => {
+      const active = b === btn;
+      b.classList.toggle('active', active);
+      b.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    document.querySelectorAll('.tabpanel').forEach((p) => {
+      p.hidden = p.id !== 'panel-' + btn.dataset.tab;
+    });
+  });
+});
 
 document.getElementById('resetBtn')?.addEventListener('click', async () => {
   try { await chrome.runtime.sendMessage({ type: 'tb-reset-session' }); } catch {}

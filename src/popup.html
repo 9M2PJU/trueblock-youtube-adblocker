@@ -10,11 +10,11 @@
   <div class="wrap">
     <header>
       <img class="logo" src="../icons/icon48.png" alt="TrueBlock logo" />
-      <div>
+      <div class="title">
         <h1>TrueBlock <span>for YouTube</span></h1>
         <p class="sub">Adblock · Sponsor Skip · Enhancer</p>
       </div>
-      <label class="switch" title="Enable / disable">
+      <label class="switch" title="Enable / disable everything">
         <input type="checkbox" id="enabled" checked />
         <span class="slider"></span>
       </label>
@@ -32,136 +32,165 @@
       <div class="stat status" id="statusPill">Active</div>
     </div>
 
-    <section class="group">
-      <label class="row"><input type="checkbox" id="blockVideoAds" checked /><span>Skip video ads <small>pre-roll · mid-roll · post-roll · bumpers</small></span></label>
-      <label class="row"><input type="checkbox" id="blockBanners" checked /><span>Remove banners & overlays <small>masthead · sidebar · overlay</small></span></label>
-      <label class="row"><input type="checkbox" id="blockSponsored" checked /><span>Remove sponsored slots <small>promoted videos · in-feed</small></span></label>
-      <label class="row"><input type="checkbox" id="blockShortsAds" checked /><span>Skip sponsored Shorts</span></label>
-      <label class="row"><input type="checkbox" id="antiAdblock" checked /><span>Anti-adblock bypass <small>“Ad blockers are not allowed”</small></span></label>
-    </section>
+    <nav class="tabs" role="tablist" aria-label="Settings sections">
+      <button class="tab active" data-tab="block" role="tab" aria-selected="true">🛡<span>Block</span></button>
+      <button class="tab" data-tab="player" role="tab" aria-selected="false">▶<span>Player</span></button>
+      <button class="tab" data-tab="audio" role="tab" aria-selected="false">🔊<span>Audio</span></button>
+      <button class="tab" data-tab="page" role="tab" aria-selected="false">🎨<span>Page</span></button>
+      <button class="tab" data-tab="community" role="tab" aria-selected="false">👥<span>Crowd</span></button>
+    </nav>
 
-    <section class="group">
-      <h2 class="section-title">Enhancements <small>ported ideas from <a href="https://github.com/YouTube-Enhancer/extension" target="_blank" rel="noopener">YouTube-Enhancer</a></small></h2>
-      <label class="row"><input type="checkbox" id="enhTheater" /><span>Auto theater mode</span></label>
-      <label class="row"><input type="checkbox" id="enhAutoplayOff" /><span>Disable autoplay</span></label>
-      <label class="row"><input type="checkbox" id="enhRememberVolume" checked /><span>Remember volume</span></label>
-      <label class="row"><input type="checkbox" id="enhSkipContinue" checked /><span>Skip “Continue watching?” pause</span></label>
-      <label class="row"><input type="checkbox" id="enhRememberSpeed" /><span>Remember playback speed</span></label>
-      <div class="row"><input type="checkbox" id="enhQuality" /><label for="enhQuality" class="grow">Force quality</label><select id="enhQualityValue" aria-label="Preferred quality">
-        <option value="hd2160">2160p 4K</option>
-        <option value="hd1440">1440p</option>
-        <option value="hd1080" selected>1080p</option>
-        <option value="hd720">720p</option>
-        <option value="large">480p</option>
-        <option value="medium">360p</option>
-      </select></div>
-      <label class="row"><input type="checkbox" id="enhHideShorts" /><span>Hide Shorts everywhere <small>home · search · sidebar · channel</small></span></label>
-      <div class="row"><input type="checkbox" id="enhVolumeBoost" /><label for="enhVolumeBoost" class="grow">Volume boost</label><select id="enhBoostValue" aria-label="Boost level">
-        <option value="1.5">150%</option>
-        <option value="2" selected>200%</option>
-        <option value="3">300%</option>
-      </select></div>
-      <div class="row"><input type="checkbox" id="enhLimiter" checked /><label for="enhLimiter" class="grow">Limiter <small>clip safety net · −3dB / 20:1</small></label></div>
-      <div class="row"><input type="checkbox" id="enhSpectrum" checked /><label for="enhSpectrum" class="grow">Spectrum overlay <small>live analyzer on the player</small></label></div>
-      <div class="row"><input type="checkbox" id="enhEQ" checked /><label for="enhEQ" class="grow">Equalizer <small>10-band audiophile · preamp · Q</small></label><select id="enhEqPreset" aria-label="EQ preset">
-        <option value="flat">Flat</option>
-        <option value="bass">Bass Boost</option>
-        <option value="treble">Treble Boost</option>
-        <option value="vocal">Vocal</option>
-        <option value="vshape">V-Shape</option>
-        <option value="loudness">Loudness</option>
-        <option value="rock" selected>Rock/Metal</option>
-        <option value="custom">Custom</option>
-      </select></div>
-      <div class="eqpanel" id="eqPanel">
-        <div class="eqrow"><span>Preamp</span><input type="range" id="enhEqPreamp" min="-12" max="6" step="0.5" value="0" /><b id="enhEqPreampVal">0dB</b></div>
-        <div class="eqrow"><span>Q width</span><select id="enhEqQ" aria-label="Filter Q"><option value="wide">Wide (0.5)</option><option value="normal" selected>Normal (1.0)</option><option value="narrow">Narrow (2.0)</option></select><b></b></div>
-        <div class="eqrow"><span>31</span><input type="range" class="eqband" data-i="0" min="-12" max="12" step="0.5" value="0" /><b>0</b></div>
-        <div class="eqrow"><span>62</span><input type="range" class="eqband" data-i="1" min="-12" max="12" step="0.5" value="0" /><b>0</b></div>
-        <div class="eqrow"><span>125</span><input type="range" class="eqband" data-i="2" min="-12" max="12" step="0.5" value="0" /><b>0</b></div>
-        <div class="eqrow"><span>250</span><input type="range" class="eqband" data-i="3" min="-12" max="12" step="0.5" value="0" /><b>0</b></div>
-        <div class="eqrow"><span>500</span><input type="range" class="eqband" data-i="4" min="-12" max="12" step="0.5" value="0" /><b>0</b></div>
-        <div class="eqrow"><span>1k</span><input type="range" class="eqband" data-i="5" min="-12" max="12" step="0.5" value="0" /><b>0</b></div>
-        <div class="eqrow"><span>2k</span><input type="range" class="eqband" data-i="6" min="-12" max="12" step="0.5" value="0" /><b>0</b></div>
-        <div class="eqrow"><span>4k</span><input type="range" class="eqband" data-i="7" min="-12" max="12" step="0.5" value="0" /><b>0</b></div>
-        <div class="eqrow"><span>8k</span><input type="range" class="eqband" data-i="8" min="-12" max="12" step="0.5" value="0" /><b>0</b></div>
-        <div class="eqrow"><span>16k</span><input type="range" class="eqband" data-i="9" min="-12" max="12" step="0.5" value="0" /><b>0</b></div>
-      </div>
-      <label class="row"><input type="checkbox" id="enhPlayerButtons" /><span>Player buttons <small>loop · copy timestamp link</small></span></label>
-      <label class="row"><input type="checkbox" id="enhScreenshot" /><span>Screenshot button <small>save frame as PNG</small></span></label>
-      <label class="row"><input type="checkbox" id="enhHideDistractions" /><span>Hide distractions <small>end cards · live chat · paid banner</small></span></label>
-      <label class="row"><input type="checkbox" id="enhRemaining" /><span>Show remaining time <small>rate-aware countdown</small></span></label>
-      <label class="row"><input type="checkbox" id="enhShortsScroll" checked /><span>Shorts auto-scroll <small>next on ended</small></span></label>
-      <div class="row"><input type="checkbox" id="enhSeekButtons" /><label for="enhSeekButtons" class="grow">Seek buttons</label><select id="enhSeekSecs" aria-label="Seek seconds">
-        <option value="5">±5s</option>
-        <option value="10" selected>±10s</option>
-        <option value="15">±15s</option>
-        <option value="30">±30s</option>
-      </select></div>
-      <label class="row"><input type="checkbox" id="enhSpeedButtons" /><span>Speed buttons <small>− / ＋ 0.25× steps</small></span></label>
-      <label class="row"><input type="checkbox" id="enhWheelVolume" /><span>Scroll-wheel volume <small>wheel over player</small></span></label>
-      <label class="row"><input type="checkbox" id="enhHideClutter" /><span>Hide feed clutter <small>posts · playlists · member-only · playables</small></span></label>
-      <div class="row"><input type="checkbox" id="enhPerRow" /><label for="enhPerRow" class="grow">Videos per row</label><select id="enhPerRowValue" aria-label="Videos per row">
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4" selected>4</option>
-        <option value="5">5</option>
-        <option value="6">6</option>
-        <option value="8">8</option>
-      </select></div>
-      <label class="row"><input type="checkbox" id="enhLinkFix" /><span>Link + key fixes <small>unwrap redirects · strip trackers · block 0-9 seek</small></span></label>
-    </section>
+    <main>
+      <!-- BLOCK -->
+      <section class="tabpanel" id="panel-block" role="tabpanel">
+        <label class="row"><input type="checkbox" id="blockVideoAds" checked /><span class="txt">Skip video ads<small>pre-roll · mid-roll · post-roll · bumpers</small></span><span class="sw" aria-hidden="true"></span></label>
+        <label class="row"><input type="checkbox" id="blockBanners" checked /><span class="txt">Remove banners &amp; overlays<small>masthead · sidebar · overlay</small></span><span class="sw" aria-hidden="true"></span></label>
+        <label class="row"><input type="checkbox" id="blockSponsored" checked /><span class="txt">Remove sponsored slots<small>promoted videos · in-feed</small></span><span class="sw" aria-hidden="true"></span></label>
+        <label class="row"><input type="checkbox" id="blockShortsAds" checked /><span class="txt">Skip sponsored Shorts</span><span class="sw" aria-hidden="true"></span></label>
+        <label class="row"><input type="checkbox" id="antiAdblock" checked /><span class="txt">Anti-adblock bypass<small>“Ad blockers are not allowed”</small></span><span class="sw" aria-hidden="true"></span></label>
+      </section>
 
-    <section class="group">
-      <h2 class="section-title">SponsorBlock <small>crowdsourced skips · <a href="https://github.com/ajayyy/SponsorBlock" target="_blank" rel="noopener">ajayyy/SponsorBlock</a> · on by default, queries sponsor.ajayyy.com</small></h2>
-      <label class="row"><input type="checkbox" id="sbEnabled" /><span>Skip in-video sponsors <small>sends video ID to SponsorBlock API</small></span></label>
-      <div class="catgrid">
-        <label class="cat"><input type="checkbox" id="sbSponsor" checked />Sponsor</label>
-        <label class="cat"><input type="checkbox" id="sbIntro" checked />Intro</label>
-        <label class="cat"><input type="checkbox" id="sbOutro" checked />Outro</label>
-        <label class="cat"><input type="checkbox" id="sbInteraction" checked />Subscribe reminder</label>
-        <label class="cat"><input type="checkbox" id="sbSelfpromo" checked />Self-promo</label>
-        <label class="cat"><input type="checkbox" id="sbMusicOfftopic" checked />Off-topic music</label>
-        <label class="cat"><input type="checkbox" id="sbPreview" checked />Recap / preview</label>
-        <label class="cat"><input type="checkbox" id="sbFiller" checked />Filler</label>
-      </div>
-    </section>
+      <!-- PLAYER -->
+      <section class="tabpanel" id="panel-player" role="tabpanel" hidden>
+        <h2 class="group-title">Playback</h2>
+        <label class="row"><input type="checkbox" id="enhTheater" /><span class="txt">Auto theater mode</span><span class="sw" aria-hidden="true"></span></label>
+        <label class="row"><input type="checkbox" id="enhAutoplayOff" /><span class="txt">Disable autoplay</span><span class="sw" aria-hidden="true"></span></label>
+        <label class="row"><input type="checkbox" id="enhRememberVolume" checked /><span class="txt">Remember volume</span><span class="sw" aria-hidden="true"></span></label>
+        <label class="row"><input type="checkbox" id="enhRememberSpeed" /><span class="txt">Remember playback speed</span><span class="sw" aria-hidden="true"></span></label>
+        <div class="row"><input type="checkbox" id="enhQuality" /><label class="txt" for="enhQuality">Force quality</label><select id="enhQualityValue" aria-label="Preferred quality">
+          <option value="hd2160">2160p 4K</option>
+          <option value="hd1440">1440p</option>
+          <option value="hd1080" selected>1080p</option>
+          <option value="hd720">720p</option>
+          <option value="large">480p</option>
+          <option value="medium">360p</option>
+        </select><label class="sw" for="enhQuality" aria-hidden="true"></label></div>
+        <label class="row"><input type="checkbox" id="enhSkipContinue" checked /><span class="txt">Skip “Continue watching?” pause</span><span class="sw" aria-hidden="true"></span></label>
+        <label class="row"><input type="checkbox" id="enhRemaining" /><span class="txt">Show remaining time<small>rate-aware countdown</small></span><span class="sw" aria-hidden="true"></span></label>
+        <h2 class="group-title">Controls</h2>
+        <label class="row"><input type="checkbox" id="enhPlayerButtons" /><span class="txt">Player buttons<small>loop · copy timestamp link</small></span><span class="sw" aria-hidden="true"></span></label>
+        <label class="row"><input type="checkbox" id="enhScreenshot" /><span class="txt">Screenshot button<small>save frame as PNG</small></span><span class="sw" aria-hidden="true"></span></label>
+        <div class="row"><input type="checkbox" id="enhSeekButtons" /><label class="txt" for="enhSeekButtons">Seek buttons</label><select id="enhSeekSecs" aria-label="Seek seconds">
+          <option value="5">±5s</option>
+          <option value="10" selected>±10s</option>
+          <option value="15">±15s</option>
+          <option value="30">±30s</option>
+        </select><label class="sw" for="enhSeekButtons" aria-hidden="true"></label></div>
+        <label class="row"><input type="checkbox" id="enhSpeedButtons" /><span class="txt">Speed buttons<small>− / ＋ 0.25× steps</small></span><span class="sw" aria-hidden="true"></span></label>
+        <label class="row"><input type="checkbox" id="enhWheelVolume" /><span class="txt">Scroll-wheel volume<small>wheel over player</small></span><span class="sw" aria-hidden="true"></span></label>
+        <h2 class="group-title">Shorts</h2>
+        <label class="row"><input type="checkbox" id="enhShortsScroll" checked /><span class="txt">Shorts auto-scroll<small>next on ended</small></span><span class="sw" aria-hidden="true"></span></label>
+      </section>
 
-    <section class="group">
-      <h2 class="section-title">Return YouTube Dislike <small>crowdsourced counts · <a href="https://returnyoutubedislike.com" target="_blank" rel="noopener">returnyoutubedislike.com</a> · on by default, queries returnyoutubedislikeapi.com</small></h2>
-      <label class="row"><input type="checkbox" id="rydEnabled" /><span>Show dislike count <small>sends video ID to RYD API</small></span></label>
-      <label class="row"><input type="checkbox" id="rydBar" /><span>Like-ratio bar <small>under like / dislike buttons</small></span></label>
-    </section>
+      <!-- AUDIO -->
+      <section class="tabpanel" id="panel-audio" role="tabpanel" hidden>
+        <div class="row"><input type="checkbox" id="enhEQ" checked /><label class="txt" for="enhEQ">Equalizer<small>10-band graphic EQ</small></label><select id="enhEqPreset" aria-label="EQ preset">
+          <option value="flat">Flat</option>
+          <option value="bass">Bass Boost</option>
+          <option value="treble">Treble Boost</option>
+          <option value="vocal">Vocal</option>
+          <option value="vshape">V-Shape</option>
+          <option value="loudness">Loudness</option>
+          <option value="rock" selected>Rock/Metal</option>
+          <option value="custom">Custom</option>
+        </select><label class="sw" for="enhEQ" aria-hidden="true"></label></div>
+        <div class="eqpanel" id="eqPanel">
+          <div class="eqbands">
+            <div class="eqband-col"><b>0</b><input type="range" class="eqband" data-i="0" min="-12" max="12" step="0.5" value="0" orient="vertical" aria-label="31 Hz" /><span>31</span></div>
+            <div class="eqband-col"><b>0</b><input type="range" class="eqband" data-i="1" min="-12" max="12" step="0.5" value="0" orient="vertical" aria-label="62 Hz" /><span>62</span></div>
+            <div class="eqband-col"><b>0</b><input type="range" class="eqband" data-i="2" min="-12" max="12" step="0.5" value="0" orient="vertical" aria-label="125 Hz" /><span>125</span></div>
+            <div class="eqband-col"><b>0</b><input type="range" class="eqband" data-i="3" min="-12" max="12" step="0.5" value="0" orient="vertical" aria-label="250 Hz" /><span>250</span></div>
+            <div class="eqband-col"><b>0</b><input type="range" class="eqband" data-i="4" min="-12" max="12" step="0.5" value="0" orient="vertical" aria-label="500 Hz" /><span>500</span></div>
+            <div class="eqband-col"><b>0</b><input type="range" class="eqband" data-i="5" min="-12" max="12" step="0.5" value="0" orient="vertical" aria-label="1 kHz" /><span>1k</span></div>
+            <div class="eqband-col"><b>0</b><input type="range" class="eqband" data-i="6" min="-12" max="12" step="0.5" value="0" orient="vertical" aria-label="2 kHz" /><span>2k</span></div>
+            <div class="eqband-col"><b>0</b><input type="range" class="eqband" data-i="7" min="-12" max="12" step="0.5" value="0" orient="vertical" aria-label="4 kHz" /><span>4k</span></div>
+            <div class="eqband-col"><b>0</b><input type="range" class="eqband" data-i="8" min="-12" max="12" step="0.5" value="0" orient="vertical" aria-label="8 kHz" /><span>8k</span></div>
+            <div class="eqband-col"><b>0</b><input type="range" class="eqband" data-i="9" min="-12" max="12" step="0.5" value="0" orient="vertical" aria-label="16 kHz" /><span>16k</span></div>
+          </div>
+          <div class="eqrow"><span>Preamp</span><input type="range" id="enhEqPreamp" min="-12" max="0" step="0.5" value="0" /><b id="enhEqPreampVal">0dB</b></div>
+          <div class="eqrow"><span>Q width</span><select id="enhEqQ" aria-label="Filter Q"><option value="wide">Wide (0.5)</option><option value="normal" selected>Normal (1.0)</option><option value="narrow">Narrow (2.0)</option></select><b></b></div>
+        </div>
+        <h2 class="group-title">Output</h2>
+        <div class="row"><input type="checkbox" id="enhVolumeBoost" /><label class="txt" for="enhVolumeBoost">Volume boost</label><select id="enhBoostValue" aria-label="Boost level">
+          <option value="1.5">150%</option>
+          <option value="2" selected>200%</option>
+          <option value="3">300%</option>
+        </select><label class="sw" for="enhVolumeBoost" aria-hidden="true"></label></div>
+        <label class="row"><input type="checkbox" id="enhLimiter" checked /><span class="txt">Limiter<small>clip safety net · −3dB / 20:1</small></span><span class="sw" aria-hidden="true"></span></label>
+        <label class="row"><input type="checkbox" id="enhSpectrum" checked /><span class="txt">Spectrum overlay<small>live analyzer on the player</small></span><span class="sw" aria-hidden="true"></span></label>
+      </section>
 
-    <section class="group">
-      <h2 class="section-title">Themes <small>v2 · dramatic default · controls kept outside labels</small></h2>
-      <div class="row"><input type="checkbox" id="enhTheme" checked /><label for="enhTheme" class="grow">Dark theme</label><select id="enhThemePreset" aria-label="Theme preset">
-        <option value="pure-black" selected>Pure Black</option>
-        <option value="dracula">Dracula</option>
-        <option value="mocha">Catppuccin-Mocha</option>
-        <option value="discord">Discord</option>
-        <option value="deep-dark">Deep-Dark</option>
-      </select></div>
-      <div class="row"><label for="enhAccent" class="grow">Accent color <small>progress bar · links (preset default until picked)</small></label><input type="color" id="enhAccent" value="#ffffff" /></div>
-    </section>
+      <!-- PAGE -->
+      <section class="tabpanel" id="panel-page" role="tabpanel" hidden>
+        <h2 class="group-title">Feed</h2>
+        <label class="row"><input type="checkbox" id="enhHideShorts" /><span class="txt">Hide Shorts everywhere<small>home · search · sidebar · channel</small></span><span class="sw" aria-hidden="true"></span></label>
+        <label class="row"><input type="checkbox" id="enhHideClutter" /><span class="txt">Hide feed clutter<small>posts · playlists · member-only · playables</small></span><span class="sw" aria-hidden="true"></span></label>
+        <label class="row"><input type="checkbox" id="enhHideDistractions" /><span class="txt">Hide distractions<small>end cards · live chat · paid banner</small></span><span class="sw" aria-hidden="true"></span></label>
+        <div class="row"><input type="checkbox" id="enhPerRow" /><label class="txt" for="enhPerRow">Videos per row</label><select id="enhPerRowValue" aria-label="Videos per row">
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4" selected>4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="8">8</option>
+        </select><label class="sw" for="enhPerRow" aria-hidden="true"></label></div>
+        <h2 class="group-title">Appearance</h2>
+        <div class="row"><input type="checkbox" id="enhTheme" checked /><label class="txt" for="enhTheme">Dark theme</label><select id="enhThemePreset" aria-label="Theme preset">
+          <option value="pure-black" selected>Pure Black</option>
+          <option value="classic">Classic Red</option>
+          <option value="dracula">Dracula</option>
+          <option value="mocha">Catppuccin-Mocha</option>
+          <option value="nord">Nord</option>
+          <option value="gruvbox">Gruvbox</option>
+          <option value="tokyo">Tokyo Night</option>
+          <option value="solarized">Solarized</option>
+          <option value="forest">Forest</option>
+          <option value="discord">Discord</option>
+          <option value="deep-dark">Deep-Dark</option>
+        </select><label class="sw" for="enhTheme" aria-hidden="true"></label></div>
+        <div class="row"><span class="txt">Accent color<small>progress bar · links · header logo</small></span><input type="color" id="enhAccent" value="#ffffff" /></div>
+        <h2 class="group-title">Browsing</h2>
+        <label class="row"><input type="checkbox" id="enhLinkFix" /><span class="txt">Link + key fixes<small>unwrap redirects · strip trackers · block 0-9 seek</small></span><span class="sw" aria-hidden="true"></span></label>
+      </section>
+
+      <!-- CROWD -->
+      <section class="tabpanel" id="panel-community" role="tabpanel" hidden>
+        <h2 class="group-title">SponsorBlock <small>· <a href="https://github.com/ajayyy/SponsorBlock" target="_blank" rel="noopener">about</a></small></h2>
+        <label class="row"><input type="checkbox" id="sbEnabled" checked /><span class="txt">Skip in-video sponsors<small>sends video ID to sponsor.ajayyy.com</small></span><span class="sw" aria-hidden="true"></span></label>
+        <div class="catgrid">
+          <label class="cat"><input type="checkbox" id="sbSponsor" checked />Sponsor</label>
+          <label class="cat"><input type="checkbox" id="sbIntro" checked />Intro</label>
+          <label class="cat"><input type="checkbox" id="sbOutro" checked />Outro</label>
+          <label class="cat"><input type="checkbox" id="sbInteraction" checked />Subscribe reminder</label>
+          <label class="cat"><input type="checkbox" id="sbSelfpromo" checked />Self-promo</label>
+          <label class="cat"><input type="checkbox" id="sbMusicOfftopic" checked />Off-topic music</label>
+          <label class="cat"><input type="checkbox" id="sbPreview" checked />Recap / preview</label>
+          <label class="cat"><input type="checkbox" id="sbFiller" checked />Filler</label>
+        </div>
+        <h2 class="group-title">Return YouTube Dislike <small>· <a href="https://returnyoutubedislike.com" target="_blank" rel="noopener">about</a></small></h2>
+        <label class="row"><input type="checkbox" id="rydEnabled" checked /><span class="txt">Show dislike count<small>sends video ID to returnyoutubedislikeapi.com</small></span><span class="sw" aria-hidden="true"></span></label>
+        <label class="row"><input type="checkbox" id="rydBar" checked /><span class="txt">Like-ratio bar<small>under like / dislike buttons</small></span><span class="sw" aria-hidden="true"></span></label>
+      </section>
+    </main>
 
     <footer>
       <button id="resetBtn" class="ghost">Reset counter</button>
       <a href="https://www.youtube.com" target="_blank" rel="noopener" class="cta">Open YouTube</a>
     </footer>
     <section class="donate">
-      <h2 class="section-title">Support TrueBlock <small>by 9M2PJU</small></h2>
+      <h2 class="group-title">Support TrueBlock <small>by 9M2PJU</small></h2>
       <div class="donate-row">
         <a class="donate-btn paypal" href="https://paypal.me/9M2PJU" target="_blank" rel="noopener" title="Donate via PayPal">💛 PayPal</a>
         <a class="donate-btn bmc" href="https://buymeacoffee.com/9m2pju" target="_blank" rel="noopener" title="Buy me a coffee">☕ Coffee</a>
         <a class="donate-btn wise" href="https://wise.com/pay/me/faizulz13" target="_blank" rel="noopener" title="Pay via Wise">💸 Wise</a>
       </div>
     </section>
-    <button id="aboutBtn" class="about-btn" aria-haspopup="dialog">ⓘ About</button>    <div id="aboutDialog" class="about-backdrop" hidden>
+    <button id="aboutBtn" class="about-btn" aria-haspopup="dialog">ⓘ About</button>
+    <div id="aboutDialog" class="about-backdrop" hidden>
       <div class="about-card" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
         <h2 id="aboutTitle">TrueBlock for YouTube</h2>
         <p class="about-ver">Version <span id="aboutVersion">1.0.0</span></p>
-        <p class="about-desc">Adblock, sponsor skip & enhancer. Private, local, no tracking.</p>
+        <p class="about-desc">Adblock, sponsor skip &amp; enhancer. Private, local, no tracking.</p>
         <dl class="about-list">
           <div><dt>Author</dt><dd><a href="https://hamradio.my" target="_blank" rel="noopener">9M2PJU</a></dd></div>
           <div><dt>Website</dt><dd><a href="https://hamradio.my" target="_blank" rel="noopener">https://hamradio.my</a></dd></div>

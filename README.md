@@ -4,7 +4,7 @@
 
 **Adblock, Sponsor Skip & Enhancer — ultra-fast, privacy-first, 100% local.**
 
-[![Version](https://img.shields.io/badge/version-1.10.3-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
+[![Version](https://img.shields.io/badge/version-2.0.0-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
 [![Chrome](https://img.shields.io/badge/Chrome-MV3-green?style=flat-square&logo=googlechrome)](https://github.com/9M2PJU/trueblock-youtube-adblocker)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-yellow?style=flat-square)](LICENSE)
 [![No tracking](https://img.shields.io/badge/tracking-none-blue?style=flat-square)](#-privacy)
@@ -29,7 +29,7 @@
 
 ### Firefox 🦊
 
-Same codebase, verified with Mozilla's `web-ext lint` (0 errors). Two things changed for Firefox: the display name is capped at 45 chars (AMO rule), and the background lists both `service_worker` (Chromium) and `scripts` (Firefox fallback) — either browser ignores the key it doesn't need.
+Same codebase, verified with Mozilla's `web-ext lint` (0 errors, 0 warnings). One thing changes for Firefox: `build.sh` emits a per-browser manifest — `background.scripts` for Firefox, `service_worker` for Chromium — everything else is identical.
 
 - **Try it now:** `about:debugging#/runtime/this-firefox` → *Load Temporary Add-on* → pick `manifest.json` (lasts until browser restart).
 - **Proper release:** needs signing at [addons.mozilla.org](https://addons.mozilla.org/developers/) (free account → Submit → automated checks + human review, usually days). `web-ext build` + `web-ext sign --api-key=… --api-secret=…`. Note AMO will see the honest data-use disclosure (watched video IDs go to SponsorBlock's API).
@@ -55,11 +55,11 @@ Same codebase, verified with Mozilla's `web-ext lint` (0 errors). Two things cha
 
 | Group | Options |
 |---|---|
-| Playback | Auto theater · autoplay off (respects your clicks) · remember volume · remember speed · force quality 4K→360p · seek ±5–30 s buttons · speed −/+ buttons · scroll-wheel volume over player |
-| Uninterrupted | Skip *“Video paused. Continue watching?”* · Shorts auto-scroll |
-| Player tools | Loop toggle · copy timestamp link · screenshot frame → PNG |
-| Declutter | Hide Shorts everywhere · hide end cards / live chat / paid banner · hide posts, playlists, member-only, playables · videos-per-row 1–8 · unwrap redirect links + strip tracker params · block 0–9 key seeking |
-| Audio | Volume boost 150 / 200 / 300 % · **audiophile 10-band EQ** (ISO bands, preamp with auto-clip-guard, global Q, 7 presets + full custom sliders) · **limiter** (−3dB/20:1 safety net) · **spectrum overlay** (live analyzer), one shared WebAudio graph |
+| 🛡 Block | Skip video ads · remove banners & overlays · remove sponsored slots · skip sponsored Shorts · anti-adblock bypass |
+| ▶ Player | Auto theater · autoplay off (respects your clicks) · remember volume / speed · force quality 4K→360p · skip *“Continue watching?”* · remaining time · loop / timestamp / screenshot buttons · seek ±5–30 s + speed buttons · scroll-wheel volume · Shorts auto-scroll |
+| 🔊 Audio | Volume boost 150 / 200 / 300 % · **audiophile 10-band EQ** (ISO bands, preamp with auto-clip-guard, global Q, 7 presets + full custom sliders) · **limiter** (−3dB/20:1 safety net) · **spectrum overlay** (live analyzer), per-video WebAudio graph that parks while paused |
+| 🎨 Page | Hide Shorts everywhere · hide end cards / live chat / paid banner · hide posts, playlists, member-only, playables · videos-per-row 1–8 · unwrap redirect links + strip tracker params · block 0–9 key seeking · 11 dark themes + accent-tinted header logo |
+| 👥 Crowd | SponsorBlock skip categories · RYD dislike count + like-ratio bar |
 
 ### 🤝 SponsorBlock + 👍 Return YouTube Dislike (crowdsourced, on by default)
 
@@ -68,14 +68,14 @@ Skips **in-video** sponsor reads, intros, outros and more using the community da
 - 8 categories: sponsor · intro · outro · subscribe-reminder · self-promo · off-topic music · recap/preview · filler (skip-type segments only)
 - Auto-skips with a toast (`Skipped sponsor (12s) · via SponsorBlock`), per-video cache, never fights the ad-skipper, fails open offline
 - Fetched through the background worker: page-origin requests are CORS-blocked by the API, the worker's host permission is not
-- **Return YouTube Dislike:** refills the native dislike (and like) count via `returnyoutubedislikeapi.com/votes`, exact counts in the tooltip, optional like-ratio bar under the buttons, works on watch + Shorts, fails open offline
+- **Return YouTube Dislike:** refills the native dislike (and like) count via `returnyoutubedislikeapi.com/votes`, exact counts in the tooltip, optional like-ratio bar under the buttons, watch pages (Shorts not covered), fails open offline
 
 > Privacy note: this sends the current **video ID** to `sponsor.ajayyy.com` (segments) and `returnyoutubedislikeapi.com` (counts) — untick either to disable. Everything else in TrueBlock stays fully local.
 
 ### 🎨 Themes (v2 — rebuilt to actually stick)
 
-- **5 presets**, default **Pure Black** (unmistakable — if it applies, you'll know)
-- **Accent picker** in any color; preset default until you pick
+- **11 presets**, default **Pure Black** (unmistakable — if it applies, you'll know)
+- **Accent picker** in any color; preset default until you pick — also tints the YouTube header logo icon to match
 - Hardened: controls live outside labels (no silent untick), bidirectional enforcement, doubled-specificity selectors + direct container fallbacks, and a read-back self-check that toasts a warning if your YouTube variant ignores the override
 
 ---
@@ -97,7 +97,7 @@ src/
 icons/                 # toolbar icons
 ```
 
-Zero dependencies. Zero build step. Just load the folder.
+Zero dependencies. No build step for development — just load the folder. `./build.sh` cuts the per-browser store zips (`TrueBlock-Chrome.zip`, `TrueBlock-Firefox.zip`).
 
 ---
 
@@ -127,6 +127,9 @@ Free forever, no ads, no tracking. If TrueBlock saves your sanity, chip in:
 
 ## 📝 Changelog
 
+- **v2.0.0** — Popup UI/UX redesign: tabbed layout (Block · Player · Audio · Page · Crowd), switch toggles, vertical graphic EQ, dark mode; 6 new themes; header logo icon auto-tints to the theme accent
+- **v1.11.0** — 6 new themes (Classic Red, Nord, Gruvbox, Tokyo Night, Solarized, Forest); popup preamp range fixed to effective values
+- **v1.10.4** — Fix loud blast after pause/replay: ad-skipper restores pre-ad speed/mute/volume instead of stranding 16x, volume memory no longer unmutes burning ads, EQ enforces clip headroom (preamp + peak ≤ 0dB), audio graph parks while paused and resumes on play
 - **v1.10.3** — New defaults for fresh installs: EQ on (Rock/Metal), Pure Black theme, spectrum overlay, all 8 SponsorBlock categories, Shorts auto-scroll
 - **v1.10.2** — Store resubmission: version bump only (AMO validation-warning fixes shipped in v1.10.1)
 - **v1.10.1** — Shorts fixes: SponsorBlock now skips segments on `/shorts/` (was watch-only), sponsored-Shorts auto-advance hardened (badge-first detect + throttle), reel ad endpoints stripped, volume/speed/EQ/timestamp tools work on the active reel
