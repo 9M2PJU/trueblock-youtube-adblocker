@@ -148,7 +148,7 @@
           <option value="discord">Discord</option>
           <option value="deep-dark">Deep-Dark</option>
         </select><label class="sw" for="enhTheme" aria-hidden="true"></label></div>
-        <div class="row"><span class="txt">Accent color<small>progress bar · links · header logo</small></span><input type="color" id="enhAccent" value="#ffffff" /></div>
+        <div class="row"><span class="txt">Accent color<small>progress bar · links · header logo</small></span><button type="button" id="enhAccentReset" class="icon-btn" title="Reset to theme default" aria-label="Reset accent color">↺</button><input type="color" id="enhAccent" value="#ffffff" /></div>
         <h2 class="group-title">Browsing</h2>
         <label class="row"><input type="checkbox" id="enhLinkFix" /><span class="txt">Link + key fixes<small>unwrap redirects · strip trackers · block 0-9 seek</small></span><span class="sw" aria-hidden="true"></span></label>
       </section>
@@ -156,7 +156,7 @@
       <!-- CROWD -->
       <section class="tabpanel" id="panel-community" role="tabpanel" hidden>
         <h2 class="group-title">SponsorBlock <small>· <a href="https://github.com/ajayyy/SponsorBlock" target="_blank" rel="noopener">about</a></small></h2>
-        <label class="row"><input type="checkbox" id="sbEnabled" checked /><span class="txt">Skip in-video sponsors<small>sends video ID to sponsor.ajayyy.com</small></span><span class="sw" aria-hidden="true"></span></label>
+        <label class="row"><input type="checkbox" id="sbEnabled" checked /><span class="txt">Skip in-video sponsors<small>sends hash prefix to sponsor.ajayyy.com</small></span><span class="sw" aria-hidden="true"></span></label>
         <div class="catgrid">
           <label class="cat"><input type="checkbox" id="sbSponsor" checked />Sponsor</label>
           <label class="cat"><input type="checkbox" id="sbIntro" checked />Intro</label>
@@ -185,21 +185,28 @@
         <a class="donate-btn wise" href="https://wise.com/pay/me/faizulz13" target="_blank" rel="noopener" title="Pay via Wise">💸 Wise</a>
       </div>
     </section>
-    <button id="aboutBtn" class="about-btn" aria-haspopup="dialog">ⓘ About</button>
+    <button id="aboutBtn" class="about-btn" aria-haspopup="dialog">ⓘ About &amp; Backup</button>
     <div id="aboutDialog" class="about-backdrop" hidden>
       <div class="about-card" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
         <h2 id="aboutTitle">TrueBlock for YouTube</h2>
-        <p class="about-ver">Version <span id="aboutVersion">1.0.0</span></p>
+        <p class="about-ver">Version <span id="aboutVersion">2.1.0</span></p>
         <p class="about-desc">Adblock, sponsor skip &amp; enhancer. Private, local, no tracking.</p>
         <dl class="about-list">
           <div><dt>Author</dt><dd><a href="https://hamradio.my" target="_blank" rel="noopener">9M2PJU</a></dd></div>
           <div><dt>Website</dt><dd><a href="https://hamradio.my" target="_blank" rel="noopener">https://hamradio.my</a></dd></div>
           <div><dt>GitHub</dt><dd><a id="aboutRepo" href="https://github.com/9M2PJU/trueblock-youtube-adblocker" target="_blank" rel="noopener">9M2PJU/trueblock-youtube-adblocker</a></dd></div>
         </dl>
+        <div class="about-actions">
+          <button type="button" id="exportBtn" class="ghost sm">Export</button>
+          <button type="button" id="importBtn" class="ghost sm">Import</button>
+          <button type="button" id="defaultsBtn" class="ghost sm">Defaults</button>
+          <input type="file" id="importFile" accept=".json,application/json" hidden />
+        </div>
+        <p id="aboutMsg" class="about-msg" hidden></p>
         <button id="aboutClose" class="cta about-close">Close</button>
       </div>
     </div>
-    <p class="privacy">Local-first · no tracking · SponsorBlock + RYD send video IDs (toggle off for fully offline)</p>
+    <p class="privacy">Local-first · no tracking · SponsorBlock (hash prefix) + RYD (toggle off for offline)</p>
   </div>
   <script src="popup.js"></script>
 </body>

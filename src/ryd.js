@@ -5,7 +5,7 @@
  * Project: https://returnyoutubedislike.com
  * Docs/API: https://returnyoutubedislike.com/docs/fetching
  * No RYD extension code is vendored — only the same public API + DOM trick:
- * refill the native like/dislike labels and add a like-ratio bar.
+ * refill missing like/dislike counts without touching SVG icons, plus ratio bar.
  * Copyright (C) 2026 9M2PJU <https://hamradio.my> — SPDX-License-Identifier: GPL-3.0-only
  *
  * Privacy: ON by default. When enabled, the current video ID is sent to
@@ -43,7 +43,6 @@
   function videoID() {
     try {
       if (location.pathname === '/watch') return new URLSearchParams(location.search).get('v') || '';
-      // Shorts: /shorts/VIDEOID
       const m = location.pathname.match(/^\/shorts\/([^/?#]+)/);
       if (m) return m[1];
       return '';
@@ -75,28 +74,26 @@
       if (!res || typeof res.likes !== 'number' || typeof res.dislikes !== 'number') return null;
       return { likes: res.likes, dislikes: res.dislikes };
     } catch {
-      return null; // worker unreachable — fail open, keep native UI
+      return null;
     }
   }
 
   async function refresh(id) {
     curID = id;
     if (!id) return;
-    if (cache.has(id)) return;
-    cache.set(id, { at: Date.now(), likes: null, dislikes: null });
-    if (cache.size > 60) {
-      const first = cache.keys().next().value;
-      cache.delete(first);
-    }
+    const existing = cache.get(id);
+    if (existing && existing.likes !== null) return;
     if (!on()) return;
     if (pendingID === id) return;
     pendingID = id;
     try {
       const votes = await fetchVotes(id);
-      const entry = cache.get(id);
-      if (entry && votes) {
-        entry.likes = votes.likes;
-        entry.dislikes = votes.dislikes;
+      if (votes) {
+        cache.set(id, { at: Date.now(), likes: votes.likes, dislikes: votes.dislikes });
+        if (cache.size > 60) {
+          const first = cache.keys().next().value;
+          cache.delete(first);
+        }
       }
     } finally {
       if (pendingID === id) pendingID = '';
@@ -104,35 +101,47 @@
     try { sweep(); } catch {}
   }
 
-  /* Locate the native like/dislike label slots. YouTube ships (at least) two
-   * variants — the classic ytd-segmented-like-dislike-button-renderer and the
-   * newer segmented-like-dislike-button-view-model — plus per-button fallbacks.
-   * We treat the first button in the segmented container as Like and the
-   * second as Dislike, matching YouTube's fixed order. */
+  function labelElFor(btn, createIfMissing) {
+    if (!btn) return null;
+    const candidates = btn.querySelectorAll('.yt-spec-button-shape-next__button-text-content, [role="text"], #text, .tb-ryd-count');
+    for (const el of candidates) {
+      if (!el.querySelector('svg')) return el;
+    }
+    if (!createIfMissing) return null;
+    const span = document.createElement('span');
+    span.className = 'tb-ryd-count';
+    btn.appendChild(span);
+    return span;
+  }
+
   function findSlots() {
-    const container = document.querySelector(
-      'segmented-like-dislike-button-view-model,' +
-      'ytd-segmented-like-dislike-button-renderer,' +
-      '#segmented-like-dislike-button'
-    );
-    if (container) {
-      const btns = container.querySelectorAll('button');
-      if (btns.length >= 2) {
-        const labelFor = (btn) => btn.querySelector(
-          '[role="text"], #text, .yt-spec-button-shape-next__button-text-content'
-        ) || btn;
-        return { container, likeEl: labelFor(btns[0]), dislikeEl: labelFor(btns[1]), likeBtn: btns[0], dislikeBtn: btns[1] };
+    const isShorts = location.pathname.startsWith('/shorts');
+    const root = isShorts ? document.querySelector('ytd-reel-video-renderer[is-active]') : document;
+    if (!root) return null;
+
+    if (!isShorts) {
+      const container = root.querySelector(
+        'segmented-like-dislike-button-view-model,' +
+        'ytd-segmented-like-dislike-button-renderer,' +
+        '#segmented-like-dislike-button'
+      );
+      if (container) {
+        const btns = container.querySelectorAll('button');
+        if (btns.length >= 2) {
+          return { container, likeBtn: btns[0], dislikeBtn: btns[1] };
+        }
       }
     }
-    // Fallback: standalone toggle buttons (older / embedded layouts)
-    const likeBtn = document.querySelector('#like-button button, ytd-like-button-renderer button');
-    const dislikeBtn = document.querySelector('#dislike-button button, ytd-dislike-button-renderer button');
+
+    const likeBtn = root.querySelector(
+      '#like-button button, ytd-like-button-renderer button, like-button-view-model button'
+    );
+    const dislikeBtn = root.querySelector(
+      '#dislike-button button, ytd-dislike-button-renderer button, dislike-button-view-model button'
+    );
     if (likeBtn && dislikeBtn) {
-      const labelFor = (btn) => btn.querySelector('[role="text"], #text') || btn;
       return {
-        container: likeBtn.closest('ytd-segmented-like-dislike-button-renderer') || likeBtn.parentElement,
-        likeEl: labelFor(likeBtn),
-        dislikeEl: labelFor(dislikeBtn),
+        container: likeBtn.closest('ytd-segmented-like-dislike-button-renderer, segmented-like-dislike-button-view-model') || likeBtn.parentElement,
         likeBtn,
         dislikeBtn
       };
@@ -161,7 +170,7 @@
       const pct = (likes / total) * 100;
       if (bar.__tb_pct !== pct) {
         bar.__tb_pct = pct;
-        bar.innerHTML = '';
+        bar.textContent = '';
         const likeFill = document.createElement('div');
         likeFill.className = 'tb-ryd-like';
         likeFill.style.width = pct + '%';
@@ -181,10 +190,11 @@
       if (id !== curID) { refresh(id); return; }
       const slots = findSlots();
       if (!slots) return;
-      // Master off or feature off: remove our bar, leave native labels alone
-      // (YouTube owns the labels — we never blank them on failure).
       if (!on()) {
-        try { slots.container?.querySelector(':scope > #tb-ryd-bar')?.remove(); } catch {}
+        try {
+          slots.container?.querySelector(':scope > #tb-ryd-bar')?.remove();
+          for (const el of document.querySelectorAll('.tb-ryd-count')) el.remove();
+        } catch {}
         return;
       }
       if (!id) return;
@@ -197,36 +207,35 @@
       const dislikeTxt = fmt(dislikes);
       const tip = `${fmtFull(likes)} likes / ${fmtFull(dislikes)} dislikes · via Return YouTube Dislike`;
       try {
-        if (slots.likeEl && slots.likeEl.textContent.trim() !== likeTxt) {
-          slots.likeEl.textContent = likeTxt;
+        const likeEl = labelElFor(slots.likeBtn, false);
+        // Only fill missing Like count; keep YouTube's accurate live Like label intact.
+        if (likeEl && !/\d/.test(likeEl.textContent || '') && likeEl.textContent.trim() !== likeTxt) {
+          likeEl.textContent = likeTxt;
         }
         if (slots.likeBtn) {
-          slots.likeBtn.setAttribute('aria-label', `Like this video along with ${fmtFull(likes)} other people`);
           slots.likeBtn.title = tip;
         }
       } catch {}
       try {
-        if (slots.dislikeEl && slots.dislikeEl.textContent.trim() !== dislikeTxt) {
-          slots.dislikeEl.textContent = dislikeTxt;
+        const dislikeEl = labelElFor(slots.dislikeBtn, true);
+        if (dislikeEl && dislikeEl.textContent.trim() !== dislikeTxt) {
+          dislikeEl.textContent = dislikeTxt;
         }
         if (slots.dislikeBtn) {
           slots.dislikeBtn.setAttribute('aria-label', `${fmtFull(dislikes)} people disliked this video`);
           slots.dislikeBtn.title = tip;
         }
       } catch {}
-      if (slots.container) paintBar(slots.container, likes, dislikes);
+      if (slots.container && !location.pathname.startsWith('/shorts')) {
+        paintBar(slots.container, likes, dislikes);
+      }
     } catch {}
   }
 
   setInterval(sweep, 1000);
-  let lastUrl = location.href;
-  setInterval(() => {
-    if (location.href !== lastUrl) {
-      lastUrl = location.href;
-      sweep();
-    }
-  }, 800);
   try {
+    window.addEventListener('tb-nav', sweep);
+    window.addEventListener('popstate', sweep);
     document.addEventListener('yt-navigate-finish', sweep);
   } catch {}
   sweep();

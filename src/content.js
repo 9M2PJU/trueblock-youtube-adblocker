@@ -1,5 +1,5 @@
 /* TrueBlock content.js — runs in ISOLATED world at document_start.
- * Fast video-ad skipper + DOM cleaner + anti-adblock bypass.
+ * Event-driven video-ad skipper + DOM cleaner + anti-adblock bypass + MAIN bridge.
  */
 (() => {
   'use strict';
@@ -15,20 +15,60 @@
     antiAdblock: true
   };
   let settings = { ...DEFAULTS };
-  try {
-    chrome.storage.sync.get(DEFAULTS, (v) => { settings = { ...DEFAULTS, ...v }; });
-    chrome.storage.onChanged.addListener((changes, area) => {
-      if (area !== 'sync') return;
-      for (const k of Object.keys(changes)) settings[k] = changes[k].newValue;
-    });
-  } catch { /* storage may be unavailable very early */ }
+
+  function syncDomFlags() {
+    try {
+      const root = document.documentElement;
+      if (root) {
+        const en = !!settings.enabled;
+        root.classList.toggle('tb-enabled', en);
+        root.classList.toggle('tb-block-banners', en && !!settings.blockBanners);
+        root.classList.toggle('tb-block-sponsored', en && !!settings.blockSponsored);
+        root.classList.toggle('tb-anti-adblock', en && !!settings.antiAdblock);
+      }
+      window.dispatchEvent(new CustomEvent('tb-config', { detail: JSON.stringify(settings) }));
+    } catch {}
+  }
+
+  function sendPlayerCmd(payload) {
+    try {
+      window.dispatchEvent(new CustomEvent('tb-player-cmd', { detail: JSON.stringify(payload) }));
+    } catch {}
+  }
 
   let blockedCount = 0;
   const reportBlocked = (n = 1) => {
-    blockedCount += n;
-    try { chrome.runtime.sendMessage({ type: 'tb-blocked', count: n }).catch(() => {}); }
-    catch { try { chrome.runtime.sendMessage({ type: 'tb-blocked', count: n }); } catch {} }
+    const k = Math.min(Math.max(1, n | 0 || 1), 50);
+    blockedCount += k;
+    try { chrome.runtime.sendMessage({ type: 'tb-blocked', count: k }).catch(() => {}); }
+    catch { try { chrome.runtime.sendMessage({ type: 'tb-blocked', count: k }); } catch {} }
   };
+
+  try {
+    syncDomFlags();
+    chrome.storage.sync.get(DEFAULTS, (v) => {
+      settings = { ...DEFAULTS, ...v };
+      syncDomFlags();
+      try { skipVideoAds(); removeBanners(document); bypassAntiAdblock(); } catch {}
+    });
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== 'sync') return;
+      for (const k of Object.keys(changes)) settings[k] = changes[k].newValue;
+      syncDomFlags();
+      if (!settings.enabled || !settings.blockVideoAds) {
+        stopAdLoop();
+        restoreAdState();
+        document.documentElement?.classList.remove('tb-skipping-ad');
+      }
+    });
+  } catch { /* storage may be unavailable very early */ }
+
+  try {
+    window.addEventListener('tb-main-blocked', (e) => {
+      const n = parseInt(e.detail, 10);
+      if (Number.isFinite(n) && n > 0) reportBlocked(n);
+    });
+  } catch {}
 
   const SKIP_SELECTORS = [
     '.ytp-skip-ad-button',
@@ -40,8 +80,7 @@
   ];
   const OVERLAY_CLOSE = [
     '.ytp-ad-overlay-close-button',
-    '.ytp-ad-overlay-close-button-modern',
-    'button.ytp-ad-button'
+    '.ytp-ad-overlay-close-button-modern'
   ];
 
   function clickIfPresent(selectors) {
@@ -51,7 +90,6 @@
         try {
           if (el && el.offsetParent !== null) {
             el.click();
-            // also dispatch pointer events for hardened buttons
             el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
             el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
             el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
@@ -68,10 +106,7 @@
     return player && (player.classList.contains('ad-showing') || player.classList.contains('ad-interrupting'));
   }
 
-  // Stash of pre-ad playback state. The ad-burner below forces mute + 16x;
-  // without a restore, a mid-roll hit on pause->replay strands the video at
-  // 16x/muted — the "loud blast after replay" (worse through EQ/boost gain).
-  // Stashed values are restored as soon as the player leaves the ad state.
+  // Stash of pre-ad playback state so mid-rolls never strand 16x/muted.
   const adStash = new Map(); // video -> { rate, muted, volume }
   function restoreAdState() {
     if (!adStash.size) return;
@@ -79,11 +114,9 @@
       try {
         if (!video.isConnected) { adStash.delete(video); continue; }
         const player = video.closest('.html5-video-player');
-        if (playerIsShowingAd(player)) continue; // still burning — keep forced values
+        if (playerIsShowingAd(player)) continue;
         try { if (video.playbackRate > 4) video.playbackRate = st.rate || 1; } catch {}
         try {
-          // Only touch mute/volume if they're still at our forced values —
-          // anything else is the user's own mid-ad choice and wins.
           if (video.muted && video.volume === 0) {
             video.muted = !!st.muted;
             video.volume = st.volume;
@@ -94,22 +127,29 @@
     }
   }
 
+  function isAdActive() {
+    return !!document.querySelector('.html5-video-player.ad-showing, .html5-video-player.ad-interrupting');
+  }
+
   function skipVideoAds() {
-    if (!settings.enabled || !settings.blockVideoAds) return;
+    if (!settings.enabled || !settings.blockVideoAds) {
+      document.documentElement?.classList.remove('tb-skipping-ad');
+      return false;
+    }
     try {
-      // Single cheap gate for the whole 20Hz loop: no ad classes, no ad work.
-      // Shorts videos don't use .html5-main-video / .ad-showing — they are
-      // handled by the Sponsored-Shorts advancer below, so keep this gate cheap.
-      const adActive = !!document.querySelector('.html5-video-player.ad-showing, .html5-video-player.ad-interrupting');
-      if (!adActive) restoreAdState();
-      const videos = adActive ? document.querySelectorAll('video.video-stream.html5-main-video, video.html5-main-video, ytd-reel-video-renderer video, #shorts-player video') : [];
+      const adActive = isAdActive();
+      if (!adActive) {
+        restoreAdState();
+        document.documentElement?.classList.remove('tb-skipping-ad');
+        return false;
+      }
+      const videos = document.querySelectorAll('video.video-stream.html5-main-video, video.html5-main-video, ytd-reel-video-renderer video, #shorts-player video');
       let skipping = false;
       for (const video of videos) {
         const player = video.closest('.html5-video-player') || document.getElementById('movie_player');
         if (!playerIsShowingAd(player)) continue;
         skipping = true;
         try {
-          // Mute + max speed so any unskippable ad burns through in ms
           if (!adStash.has(video)) {
             try {
               adStash.set(video, {
@@ -122,37 +162,22 @@
           video.muted = true;
           video.volume = 0;
           try { video.playbackRate = 16; } catch { try { video.playbackRate = 8; } catch {} }
-          // Seek to end — this ends >95% of pre/mid/post-rolls instantly.
-          // (No synthetic 'ended' dispatch: reaching duration fires it natively,
-          // and a fake one can double-advance playlists.)
           const dur = video.duration;
-          if (Number.isFinite(dur) && dur > 0) {
-            if (video.currentTime < dur - 0.15) {
-              try { video.currentTime = dur - 0.05; } catch {}
-              try { video.currentTime = dur; } catch {}
-            }
+          if (Number.isFinite(dur) && dur > 0 && video.currentTime < dur - 0.15) {
+            try { video.currentTime = dur - 0.05; } catch {}
+            try { video.currentTime = dur; } catch {}
           }
           try { video.play().catch(() => {}); } catch {}
         } catch { /* never break playback */ }
       }
-      // Click skip buttons only while an ad is actually showing (the 6-selector
-      // scan is the hottest cost in this 20Hz loop — gate it, not the videos).
-      // Overlay-close stays ungated: overlay ads show during normal playback.
-      if (adActive && clickIfPresent(SKIP_SELECTORS)) skipping = true;
-      if (clickIfPresent(OVERLAY_CLOSE)) skipping = true;
-
-      // Hide ad frame flash
-      document.documentElement.classList.toggle('tb-skipping-ad', skipping);
-
-      // Try the player's own API as a last resort
+      if (clickIfPresent(SKIP_SELECTORS)) skipping = true;
+      document.documentElement?.classList.toggle('tb-skipping-ad', skipping);
       if (skipping) {
-        try {
-          const mp = document.getElementById('movie_player');
-          if (mp && typeof mp.skipAd === 'function') { try { mp.skipAd(); } catch {} }
-        } catch {}
+        sendPlayerCmd({ action: 'skipAd' });
         reportBlocked(1);
       }
-    } catch { /* ignore */ }
+      return true;
+    } catch { return false; }
   }
 
   const BANNER_SELECTORS = [
@@ -160,6 +185,7 @@
     'ytd-ad-slot-renderer', 'ytd-display-ad-renderer',
     'ytd-promoted-video-renderer', 'ytd-compact-promoted-video-renderer',
     'ytd-action-companion-ad-renderer', 'ytd-promoted-sparkles-web-renderer',
+    'ytd-promoted-sparkles-text-search-renderer',
     'ytd-masthead-ad-v3-renderer', 'ytd-video-masthead-ad-v3-renderer',
     'ytd-in-feed-ad-layout-renderer',
     '.ytp-ad-player-overlay', '.ytp-ad-text-overlay', '.ytp-ad-overlay-container',
@@ -169,18 +195,20 @@
   function removeBanners(root = document) {
     if (!settings.enabled) return;
     try {
+      if (settings.blockBanners) {
+        clickIfPresent(OVERLAY_CLOSE);
+      }
       if (settings.blockBanners || settings.blockSponsored) {
         for (const sel of BANNER_SELECTORS) {
           let nodes;
           try { nodes = root.querySelectorAll ? root.querySelectorAll(sel) : []; } catch { continue; }
           for (const n of nodes) {
-            // Never remove the main video container itself
             if (n.id === 'movie_player' || n.id === 'player') continue;
             try {
-              // Sponsored toggle: only remove promoted renderers when enabled
               const html = (n.tagName || '').toLowerCase();
-              const isSponsored = html.includes('promoted') || html.includes('in-feed-ad');
+              const isSponsored = html.includes('promoted') || html.includes('in-feed-ad') || html === 'ytd-ad-slot-renderer';
               if (isSponsored && !settings.blockSponsored) continue;
+              if (!isSponsored && !settings.blockBanners) continue;
               n.remove();
               reportBlocked(1);
             } catch { try { n.style.display = 'none'; } catch {} }
@@ -192,12 +220,10 @@
         try {
           const active = document.querySelector('ytd-reel-video-renderer[is-active]');
           if (active) {
-            // Explicit badge first (stable), full-text fallback (localised labels vary).
             const badge = active.querySelector('[overlay-style="SPONSORED"], .badge-style-type-ad, ytd-badge-supported-renderer');
             const badgeText = (badge ? badge.textContent : '') || '';
             const fullText = active.textContent || '';
             const isAd = /sponsor/i.test(badgeText) || /sponsored/i.test(fullText.slice(0, 4000));
-            // Throttle: one advance per second max (sweep runs every 1.5s + on mutation)
             const now = Date.now();
             if (isAd && (now - (removeBanners.__tb_shortsAt || 0) > 1000)) {
               removeBanners.__tb_shortsAt = now;
@@ -213,21 +239,15 @@
   function bypassAntiAdblock() {
     if (!settings.enabled || !settings.antiAdblock) return;
     try {
-      // YouTube's "Ad blockers are not allowed" enforcement dialog
       const dialogs = document.querySelectorAll('tp-yt-paper-dialog, ytd-enforcement-message-view-model, yt-playability-error-supported-renderers');
       for (const d of dialogs) {
         try {
           const text = (d.textContent || '').slice(0, 600);
           if (/ad[\s-]?block/i.test(text) && (/not allowed|violat|disable|allow ads|whitelist/i.test(text) || d.tagName.toLowerCase().includes('enforcement'))) {
-            // Unblock the player first, then remove the nag
-            try {
-              const mp = document.getElementById('movie_player');
-              if (mp && typeof mp.playVideo === 'function') mp.playVideo();
-              const v = document.querySelector('video.html5-main-video');
-              if (v) { try { v.play().catch(() => {}); } catch {} }
-            } catch {}
+            sendPlayerCmd({ action: 'playVideo' });
+            const v = document.querySelector('video.html5-main-video');
+            if (v) { try { v.play().catch(() => {}); } catch {} }
             try { d.remove(); reportBlocked(1); } catch { d.style.display = 'none'; }
-            // Remove modal backdrop
             for (const b of document.querySelectorAll('tp-yt-iron-overlay-backdrop.opened')) {
               try { b.remove(); } catch { b.style.display = 'none'; }
             }
@@ -235,68 +255,102 @@
           }
         } catch {}
       }
-      // Player blocked overlay variant
       try {
         const errSub = document.querySelector('.ytp-error-content, .ytp-player-content.ytp-error');
         if (errSub && /ad[\s-]?block/i.test((errSub.textContent || '').slice(0, 400))) {
           const v = document.querySelector('video.html5-main-video');
-          if (v) {
-            const src = v.src;
-            // force reload of the video element without full page reload
-            if (src) { try { v.load(); v.play().catch(() => {}); } catch {} }
+          if (v && v.src) {
+            try { v.load(); v.play().catch(() => {}); } catch {}
           }
         }
       } catch {}
     } catch { /* ignore */ }
   }
 
-  // High-frequency fast path for video ads (every animation frame, throttled internally)
+  // Event-driven rAF ad-skipper: spins ONLY while an ad is actively showing.
+  let adRaf = 0;
   let lastSkip = 0;
-  function fastLoop(ts) {
+  function adTick(ts) {
+    adRaf = 0;
+    let keepRunning = false;
     try {
-      if (ts - lastSkip > 50) { // ~20 checks/sec: fast enough to catch 6s bumpers instantly
-        lastSkip = ts;
-        skipVideoAds();
+      if (settings.enabled && settings.blockVideoAds && isAdActive()) {
+        if (ts - lastSkip >= 50) {
+          lastSkip = ts;
+          skipVideoAds();
+        }
+        keepRunning = isAdActive();
+      }
+      if (!keepRunning) {
+        restoreAdState();
+        document.documentElement?.classList.remove('tb-skipping-ad');
       }
     } catch {}
-    requestAnimationFrame(fastLoop);
+    if (keepRunning) adRaf = requestAnimationFrame(adTick);
+  }
+  function startAdLoop() {
+    if (!adRaf && settings.enabled && settings.blockVideoAds && isAdActive()) {
+      adRaf = requestAnimationFrame(adTick);
+    }
+  }
+  function stopAdLoop() {
+    if (adRaf) {
+      cancelAnimationFrame(adRaf);
+      adRaf = 0;
+    }
   }
 
-  // Observed DOM path for banners / dialogs (debounced)
-  let pending = false;
+  let sweepTimer = 0;
   function scheduleSweep() {
-    if (pending) return;
-    pending = true;
-    queueMicrotask(() => {
-      pending = false;
+    if (sweepTimer) return;
+    sweepTimer = setTimeout(() => {
+      sweepTimer = 0;
       try {
         removeBanners(document);
         bypassAntiAdblock();
-        skipVideoAds();
+        if (skipVideoAds()) startAdLoop();
       } catch {}
-    });
+    }, 150);
+  }
+
+  let lastUrl = location.href;
+  function emitNav() {
+    if (location.href !== lastUrl) {
+      lastUrl = location.href;
+      try { window.dispatchEvent(new CustomEvent('tb-nav')); } catch {}
+      scheduleSweep();
+    }
   }
 
   function start() {
     if (start.done) return;
     start.done = true;
     try {
-      skipVideoAds();
+      syncDomFlags();
+      if (skipVideoAds()) startAdLoop();
       removeBanners(document);
       bypassAntiAdblock();
-      requestAnimationFrame(fastLoop);
-      // 500ms interval backstop for SPA navigations where rAF throttles in background
-      setInterval(() => { try { skipVideoAds(); bypassAntiAdblock(); } catch {} }, 500);
-      // Slower cosmetic sweep
-      setInterval(() => { try { removeBanners(document); } catch {} }, 1500);
+
+      // Low-frequency backstop for background tabs / missed mutations
+      setInterval(() => {
+        try {
+          emitNav();
+          if (skipVideoAds()) startAdLoop();
+          bypassAntiAdblock();
+          removeBanners(document);
+        } catch {}
+      }, 1500);
 
       const obs = new MutationObserver((mutations) => {
-        // Fast-path: if any added node looks ad-related, sweep immediately
         for (const m of mutations) {
-          if (m.addedNodes && m.addedNodes.length) { scheduleSweep(); return; }
+          if (m.addedNodes && m.addedNodes.length) {
+            if (isAdActive() && skipVideoAds()) startAdLoop();
+            scheduleSweep();
+            return;
+          }
           if (m.type === 'attributes' && m.target && m.target.classList &&
             (m.target.classList.contains('ad-showing') || m.target.classList.contains('ad-interrupting'))) {
-            skipVideoAds();
+            if (skipVideoAds()) startAdLoop();
             return;
           }
         }
@@ -305,27 +359,20 @@
         childList: true,
         subtree: true,
         attributes: true,
-        attributeFilter: ['class', 'src', 'href']
+        attributeFilter: ['class']
       });
 
-      // YouTube SPA navigation: re-sweep on URL change
-      let lastUrl = location.href;
-      setInterval(() => {
-        if (location.href !== lastUrl) {
-          lastUrl = location.href;
-          try { skipVideoAds(); removeBanners(document); bypassAntiAdblock(); } catch {}
-        }
-      }, 800);
-
+      window.addEventListener('popstate', emitNav);
       document.addEventListener('yt-navigate-finish', () => {
-        try { skipVideoAds(); removeBanners(document); bypassAntiAdblock(); } catch {}
+        lastUrl = location.href;
+        try { window.dispatchEvent(new CustomEvent('tb-nav')); } catch {}
+        scheduleSweep();
       });
     } catch { /* ignore */ }
   }
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', start, { once: true });
-    // still start early — video ads can appear before DOMContentLoaded
     start();
   } else {
     start();

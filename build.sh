@@ -1,31 +1,56 @@
 #!/usr/bin/env bash
-# Build per-browser packages. Chrome forbids background.scripts in MV3 while
-# Firefox ignores background.service_worker — so each package gets the
-# manifest variant that its browser accepts. Everything else is identical.
+# Build per-browser packages. Chrome forbids background.scripts / browser_specific_settings
+# warnings while Firefox needs background.scripts instead of service_worker.
 set -euo pipefail
 cd "$(dirname "$0")"
-rm -rf dist TrueBlock-Chrome.zip TrueBlock-Firefox.zip /tmp/opencode/TrueBlock-Chrome.zip /tmp/opencode/TrueBlock-Firefox.zip
-mkdir -p dist/chrome dist/firefox /tmp/opencode
 
-FILES="rules src icons LICENSE README.md PRIVACY.md"
-cp manifest.json dist/chrome/manifest.json
+# Run automated verification first if a working JS runtime is available
+if command -v bun >/dev/null 2>&1; then
+  bun tests/verify.mjs
+elif node --version >/dev/null 2>&1; then
+  node tests/verify.mjs
+fi
+
+rm -rf dist TrueBlock-Chrome.zip TrueBlock-Firefox.zip
+mkdir -p dist/chrome dist/firefox
+
+cp -r rules src icons LICENSE README.md PRIVACY.md dist/chrome/
+cp -r rules src icons LICENSE README.md PRIVACY.md dist/firefox/
+rm -f dist/chrome/icons/icon512.png dist/firefox/icons/icon512.png
+
 python3 - <<'EOF'
 import json
-m = json.load(open('manifest.json'))
-m['background'] = {'scripts': ['src/background.js']}
-json.dump(m, open('dist/firefox/manifest.json', 'w'), indent=2)
-print('firefox manifest: background.scripts, no service_worker')
+
+with open('manifest.json', encoding='utf-8') as f:
+    base = json.load(f)
+
+chrome_m = dict(base)
+chrome_m.pop('browser_specific_settings', None)
+with open('dist/chrome/manifest.json', 'w', encoding='utf-8') as f:
+    json.dump(chrome_m, f, indent=2)
+    f.write('\n')
+
+firefox_m = dict(base)
+firefox_m.pop('minimum_chrome_version', None)
+firefox_m['background'] = {'scripts': ['src/background.js']}
+with open('dist/firefox/manifest.json', 'w', encoding='utf-8') as f:
+    json.dump(firefox_m, f, indent=2)
+    f.write('\n')
+
+assert 'service_worker' in chrome_m['background'] and 'browser_specific_settings' not in chrome_m
+assert firefox_m['background'] == {'scripts': ['src/background.js']} and 'minimum_chrome_version' not in firefox_m
+print('both manifests valid, keys correct')
 EOF
 
-for target in chrome firefox; do
-  cp -r rules src icons LICENSE README.md PRIVACY.md "dist/$target/"
-done
-# background-dnr.js uses Chrome-only declarativeNetRequest.onRuleMatchedDebug:
-# keep it in the Chrome zip, exclude from Firefox (importScripts is try/caught).
-rm -f dist/firefox/src/background-dnr.js
-python3 -c "import json; m=json.load(open('dist/chrome/manifest.json')); assert 'service_worker' in m['background'] and 'scripts' not in m['background']; m=json.load(open('dist/firefox/manifest.json')); assert m['background']=={'scripts':['src/background.js']}; print('both manifests valid, keys correct')"
-(cd dist/chrome && zip -qr /tmp/opencode/TrueBlock-Chrome.zip .) 
-(cd dist/firefox && zip -qr /tmp/opencode/TrueBlock-Firefox.zip .)
-cp /tmp/opencode/TrueBlock-Chrome.zip ./TrueBlock-Chrome.zip
-cp /tmp/opencode/TrueBlock-Firefox.zip ./TrueBlock-Firefox.zip
+WEB_EXT_BIN=$(command -v web-ext 2>/dev/null || echo "$HOME/.npm-global/bin/web-ext")
+if [ -x "$WEB_EXT_BIN" ]; then
+  if "$WEB_EXT_BIN" --version >/dev/null 2>&1; then
+    "$WEB_EXT_BIN" lint --source-dir dist/firefox
+  elif command -v bun >/dev/null 2>&1; then
+    bun "$WEB_EXT_BIN" lint --source-dir dist/firefox
+  fi
+fi
+
+(cd dist/chrome && zip -qr ../../TrueBlock-Chrome.zip .)
+(cd dist/firefox && zip -qr ../../TrueBlock-Firefox.zip .)
 ls -lh TrueBlock-Chrome.zip TrueBlock-Firefox.zip

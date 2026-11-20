@@ -3,9 +3,9 @@
  * Lean native re-implementation inspired by YouTube-Enhancer/extension (MIT):
  *   https://github.com/YouTube-Enhancer/extension
  * No upstream code is copied — only the same public DOM/player tricks:
- * theater via .ytp-size-button, autoplay via .ytp-autonav-toggle,
- * continue-watching via ytd-watch-flexy youthereDataChanged_ + confirm click,
- * quality via #movie_player.setPlaybackQualityRange, volume/speed via <video>,
+ * theater via .ytp-size-button, autoplay via .ytp-autonav-toggle / MAIN bridge,
+ * continue-watching via MAIN youthereDataChanged_ patch + confirm click,
+ * quality via MAIN #movie_player.setPlaybackQualityRange, volume/speed via <video>,
  * hide-shorts via body-class CSS, remaining-time via .ytp-time-contents span,
  * shorts-autoscroll via ended -> #navigation-button-down click,
  * loop via video.loop toggle, timestamp via youtu.be clipboard copy,
@@ -30,8 +30,8 @@
     enhBoostValue: '2',
     enhEQ: true,
     enhEqPreset: 'rock',
-    enhEqGains: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    enhEqPreamp: '0',
+    enhEqGains: [2, 4, 2, 3, 1, 0, 1, 4, 2, 1],
+    enhEqPreamp: '-4',
     enhEqQ: 'normal',
     enhLimiter: true,
     enhSpectrum: true,
@@ -53,12 +53,23 @@
     enhLinkFix: false
   };
   let s = { ...DEFAULTS };
+
+  function sendPlayerCmd(payload) {
+    try {
+      window.dispatchEvent(new CustomEvent('tb-player-cmd', { detail: JSON.stringify(payload) }));
+    } catch {}
+  }
+
+  let lastQualityKey = '';
   try {
     chrome.storage.sync.get(DEFAULTS, (v) => { s = { ...DEFAULTS, ...v }; });
     chrome.storage.onChanged.addListener((ch, area) => {
       if (area !== 'sync') return;
       for (const k of Object.keys(ch)) s[k] = ch[k].newValue;
-      try { setTimeout(sweep, 0); } catch {} // apply toggle changes immediately
+      if (ch.enhTheater || ch.enabled) userChoseTheater = false;
+      if (ch.enhAutoplayOff || ch.enabled) userChoseAutoplay = false;
+      if (ch.enhQuality || ch.enhQualityValue || ch.enabled) lastQualityKey = '';
+      try { setTimeout(sweep, 0); } catch {}
     });
   } catch {}
 
@@ -68,8 +79,6 @@
   const shortsID = () => { try { const m = location.pathname.match(/^\/shorts\/([^/?#]+)/); return m ? m[1] : ''; } catch { return ''; } };
   const watchID = () => { try { return new URLSearchParams(location.search).get('v') || ''; } catch { return ''; } };
   const currentVideoID = () => watchID() || shortsID();
-  // Watch uses video.html5-main-video; Shorts pre-renders neighbours — only the
-  // active reel is audible, so prefer it (fallback covers #shorts-player).
   const activeVideo = () => document.querySelector('video.html5-main-video') ||
     document.querySelector('ytd-reel-video-renderer[is-active] video, #shorts-player video');
   const isTheater = () => {
@@ -77,28 +86,57 @@
     return !!grid && grid.hasAttribute('theater');
   };
 
-  /* 1) Automatic theater mode — the toggle is the source of truth, both ways.
-   * ON: YouTube is put into theater. OFF: YouTube is kept out of theater.
-   * Enforced every sweep (throttled) so SPA navigations and YouTube's own
-   * remembered preference can't drift away from the setting. */
+  /* 1) Automatic theater mode — respects manual user toggle and 't' shortcut */
+  let userChoseTheater = false;
   let lastTheaterClick = 0;
+  let theaterTouched = false;
+  try {
+    document.addEventListener('click', (e) => {
+      try {
+        if (e.isTrusted && e.target && e.target.closest && e.target.closest('button.ytp-size-button')) {
+          userChoseTheater = true;
+          theaterTouched = false;
+        }
+      } catch {}
+    }, true);
+    document.addEventListener('keydown', (e) => {
+      try {
+        if (!e.isTrusted || e.ctrlKey || e.metaKey || e.altKey) return;
+        if (e.key !== 't' && e.key !== 'T') return;
+        const t = e.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+        userChoseTheater = true;
+        theaterTouched = false;
+      } catch {}
+    }, true);
+  } catch {}
   function theaterSweep() {
     if (!isWatch()) return;
-    const wantTheater = on() && s.enhTheater;
     try {
-      if (isTheater() === wantTheater) return;
-      if (Date.now() - lastTheaterClick < 1000) return;
-      const btn = document.querySelector('button.ytp-size-button');
-      if (!btn || btn.offsetParent === null) return;
-      lastTheaterClick = Date.now();
-      btn.click();
+      const wantTheater = on() && s.enhTheater;
+      const cur = isTheater();
+      if (wantTheater && !userChoseTheater) {
+        if (cur) return;
+        if (Date.now() - lastTheaterClick < 1000) return;
+        const btn = document.querySelector('button.ytp-size-button');
+        if (!btn || btn.offsetParent === null) return;
+        lastTheaterClick = Date.now();
+        btn.click();
+        theaterTouched = true;
+        return;
+      }
+      if (!wantTheater && theaterTouched && cur) {
+        if (Date.now() - lastTheaterClick < 1000) return;
+        const btn = document.querySelector('button.ytp-size-button');
+        if (!btn || btn.offsetParent === null) return;
+        lastTheaterClick = Date.now();
+        btn.click();
+        theaterTouched = false;
+      }
     } catch {}
   }
 
-  /* 2) Disable autoplay — the toggle is the source of truth, both ways.
-   * ON: autoplay is forced off (your in-player clicks still win for the video).
-   * OFF: if WE turned it off, it is restored — unticking never strands you
-   * with a dead Up-Next. Manual player clicks always clear our claim. */
+  /* 2) Disable autoplay — respects manual clicks, folded toggle uses MAIN bridge */
   let userChoseAutoplay = false;
   let lastAutoplayClick = 0;
   let autoplayTouched = false;
@@ -107,20 +145,16 @@
       try {
         if (e.isTrusted && e.target && e.target.closest && e.target.closest('.ytp-autonav-toggle')) {
           userChoseAutoplay = true;
-          autoplayTouched = false; // user's own click wins from here on
+          autoplayTouched = false;
         }
       } catch {}
     }, true);
   } catch {}
   function setAutoplayOff(toggle) {
     if (toggle.style.display === 'none' || getComputedStyle(toggle).display === 'none') {
-      // Folded toggle is inert — use player API like upstream does
-      const p = player();
-      try {
-        if (p && typeof p.setAutonav === 'function') { p.setAutonav(false); autoplayTouched = true; return true; }
-        if (p && typeof p.setAutonavState === 'function') { p.setAutonavState(1); autoplayTouched = true; return true; }
-      } catch {}
-      return false;
+      sendPlayerCmd({ action: 'setAutonav', enabled: false });
+      autoplayTouched = true;
+      return true;
     }
     lastAutoplayClick = Date.now();
     toggle.click();
@@ -129,31 +163,27 @@
   }
   function setAutoplayOn(toggle) {
     if (toggle.style.display === 'none' || getComputedStyle(toggle).display === 'none') {
-      const p = player();
-      try {
-        if (p && typeof p.setAutonav === 'function') { p.setAutonav(true); return true; }
-        if (p && typeof p.setAutonavState === 'function') { p.setAutonavState(2); return true; }
-      } catch {}
-      return false;
+      sendPlayerCmd({ action: 'setAutonav', enabled: true });
+      return true;
     }
     lastAutoplayClick = Date.now();
     toggle.click();
     return true;
   }
   function autoplaySweep() {
-    if (!on() || !isWatch()) return;
+    if (!isWatch()) return;
     try {
       const toggle = document.querySelector('.ytp-autonav-toggle');
       if (!toggle) return;
       const checked = toggle.getAttribute('aria-checked') === 'true';
-      if (s.enhAutoplayOff && !userChoseAutoplay) {
+      const wantOff = on() && s.enhAutoplayOff;
+      if (wantOff && !userChoseAutoplay) {
         if (!checked) return;
         if (Date.now() - lastAutoplayClick < 1000) return;
         setAutoplayOff(toggle);
         return;
       }
-      // Setting off (or master off): restore only if we were the ones who killed it.
-      if (!s.enhAutoplayOff && autoplayTouched && !checked) {
+      if (!wantOff && autoplayTouched && !checked) {
         if (Date.now() - lastAutoplayClick < 1000) return;
         if (setAutoplayOn(toggle)) autoplayTouched = false;
       }
@@ -169,7 +199,6 @@
         if (!on() || !s.enhRememberVolume) return;
         const v = e.target;
         if (!(v instanceof HTMLVideoElement)) return;
-        // Watch videos carry html5-main-video; Shorts videos live in the active reel.
         const isMain = v.classList.contains('html5-main-video');
         const isShortsVid = !!v.closest('ytd-reel-video-renderer, #shorts-player, ytd-shorts');
         if (!isMain && !isShortsVid) return;
@@ -186,8 +215,6 @@
     try {
       const v = activeVideo();
       if (!v) return;
-      // Never fight the ad-skipper: content.js owns mute/volume while an ad
-      // is showing — restoring here unmutes the ad (loud 16x blast through EQ).
       const p = v.closest('.html5-video-player');
       if (p && (p.classList.contains('ad-showing') || p.classList.contains('ad-interrupting'))) return;
       if (Math.abs(v.volume - savedVolume) > 0.01) { try { v.volume = savedVolume; } catch {} }
@@ -195,31 +222,28 @@
     } catch {}
   }
 
-  /* 4) Preferred quality — the toggle is the source of truth.
-   * Re-applied every sweep while enabled, so neither YouTube's auto pick nor
-   * mid-video changes can drift away from the setting. */
+  /* 4) Preferred quality — executed in MAIN world via tb-player-cmd bridge */
   function qualitySweep() {
     if (!on() || !s.enhQuality || !isWatch()) return;
     try {
-      const p = player();
-      if (!p || typeof p.setPlaybackQualityRange !== 'function' || typeof p.getPlaybackQuality !== 'function') return;
+      const vid = watchID();
+      const v = activeVideo();
+      if (!vid || !player() || !v || v.readyState < 1) return;
       const want = s.enhQualityValue || 'hd1080';
-      let cur = null;
-      try { cur = p.getPlaybackQuality(); } catch {}
-      if (cur === want) return;
-      try { p.setPlaybackQualityRange(want, want); } catch {}
-      try { if (typeof p.setPlaybackQuality === 'function') p.setPlaybackQuality(want); } catch {}
+      const key = `${vid}|${want}`;
+      if (lastQualityKey === key) return;
+      lastQualityKey = key;
+      sendPlayerCmd({ action: 'setQuality', quality: want });
     } catch {}
   }
 
-  /* 5) Skip "Video paused. Continue watching?" — patch youthereDataChanged_ + click Yes */
+  /* 5) Skip "Video paused. Continue watching?" — MAIN-world patch + click Yes */
   function patchYouthere() {
     try {
       const w = document.querySelector('ytd-watch-flexy, ytd-watch-grid');
-      if (w && !w.__tb_patched && typeof w.youthereDataChanged_ === 'function') {
-        w.__tb_origYouthere = w.youthereDataChanged_;
-        w.youthereDataChanged_ = function () {};
-        w.__tb_patched = true;
+      if (w && !w.__tb_youthereSent) {
+        w.__tb_youthereSent = true;
+        sendPlayerCmd({ action: 'patchYouthere' });
       }
     } catch {}
   }
@@ -277,7 +301,7 @@
       boostSweep();
       eqSweep();
       limiterSweep();
-      if (!specRAF) { try { specRAF = requestAnimationFrame(spectrumTick); } catch {} }
+      if (!specRAF && !document.hidden) { try { specRAF = requestAnimationFrame(spectrumTick); } catch {} }
       buttonsSweep();
       remainingSweep();
       shortsScrollSweep();
@@ -289,7 +313,7 @@
     } catch {}
   }
 
-  /* 7) Hide Shorts everywhere — same selectors as upstream hideShorts/index.css */
+  /* 7) Hide Shorts everywhere */
   const SHORTS_CSS = `
 html.tb-hide-shorts ytd-guide-entry-renderer:has(a[title="Shorts"]),
 html.tb-hide-shorts ytd-mini-guide-entry-renderer:has(a[title="Shorts"]){display:none!important}
@@ -345,11 +369,7 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
     } catch {}
   }
 
-  /* 9) Unified WebAudio graph — 10-band audiophile EQ + volume boost + limiter,
-   * one graph per video element (a second MediaElementSource would break audio):
-   * source -> preamp -> 10 biquads -> boost gain -> limiter -> analyser -> out.
-   * The analyser is a pass-through tap feeding the spectrum overlay.
-   * Disabled stages sit neutral so toggling never rebuilds mid-playback. */
+  /* 9) Unified WebAudio graph — 10-band audiophile EQ + volume boost + limiter */
   const EQ_BANDS = [
     { type: 'lowshelf', freq: 31 }, { type: 'peaking', freq: 62 },
     { type: 'peaking', freq: 125 }, { type: 'peaking', freq: 250 },
@@ -357,11 +377,6 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
     { type: 'peaking', freq: 2000 }, { type: 'peaking', freq: 4000 },
     { type: 'peaking', freq: 8000 }, { type: 'highshelf', freq: 16000 }
   ];
-  // Preset curves informed by SFX Engine's "7 Best Equalizer Settings for Music":
-  // V-shape compensates equal-loudness contours; vocal centers 2.5-3.5kHz presence
-  // with 100-250Hz de-mud and 6-8kHz de-ess; bass starts +3..+6dB at 60-120Hz with
-  // a 200-400Hz mud cut; treble stays subtle (+2..+4 presence, +1..+2 air);
-  // rock pushes 200-500Hz body + 3-5kHz bite. (Values adapted to our ISO bands.)
   const EQ_PRESETS = {
     flat: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     bass: [6, 6, 4, 0, -1, 0, 0, 0, 0, 0],
@@ -377,13 +392,6 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
   let eqUnavailableToast = false;
   const audioGraphs = new WeakMap();
   const audioCtxs = new Set();
-  /* Chrome autoplay policy: an AudioContext created (or resumed) before any
-   * user gesture starts 'suspended', and resume() outside a gesture logs
-   * "The AudioContext was not allowed to start..." (src/enhancements.js:461).
-   * Worse, routing the <video> through a suspended graph mutes it. So gate
-   * both graph creation and resume() on sticky user activation, and resume
-   * existing contexts from inside a real gesture handler. After the first
-   * gesture, sweep-driven resume() is allowed and warning-free. */
   let audioUnlocked = false;
   try { audioUnlocked = !!(navigator.userActivation && navigator.userActivation.hasBeenActive); } catch {}
   function hasAudioGesture() {
@@ -399,11 +407,8 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
   function tryResumeAudio(g, video) {
     try {
       if (!g || !g.ctx || g.ctx.state !== 'suspended') return;
-      // A paused element flows silence: resuming now just piles automation
-      // onto a frozen currentTime, which fires as a burst on replay. The
-      // play handler below resumes exactly when signal returns.
       if (video && video.paused) return;
-      if (!hasAudioGesture()) return; // no sticky activation yet: stay quiet, no warning
+      if (!hasAudioGesture()) return;
       g.ctx.resume().catch(() => {});
     } catch {}
   }
@@ -424,8 +429,6 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
       return s.enhEqGains.map((x) => Math.min(12, Math.max(-12, +x || 0)));
     }
     const base = EQ_PRESETS[s.enhEqPreset] || EQ_PRESETS.flat;
-    // Dynamic loudness (Fletcher-Munson, per SFX Engine): full curve when quiet,
-    // flattening to neutral at full volume — scaled from the live video volume.
     if (s.enhEqPreset === 'loudness') {
       try {
         const vv = activeVideo();
@@ -436,10 +439,6 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
     }
     return base;
   }
-  // Pause/resume hardening: while paused the element flows silence, so park
-  // the context suspended (no stale filter/comp state, no automation pile-up
-  // on a frozen currentTime). On play, resume exactly when signal returns —
-  // this removes the resume thump/burst through EQ + boost + limiter.
   function hookAudioPause(video, g) {
     try {
       if (!video || !g || video.__tb_pauseHook) return;
@@ -454,6 +453,7 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
         try {
           const gg = audioGraphs.get(video);
           if (gg) tryResumeAudio(gg, video);
+          if (!specRAF && !document.hidden) specRAF = requestAnimationFrame(spectrumTick);
         } catch {}
       });
     } catch {}
@@ -461,8 +461,6 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
   function ensureAudioGraph(video) {
     let g = audioGraphs.get(video);
     if (g) { hookAudioPause(video, g); return g; }
-    // Defer creation until a user gesture: routing audio through a suspended
-    // context would mute the video until unlock, and resume() would warn.
     if (!hasAudioGesture()) return null;
     try {
       const AC = window.AudioContext || window.webkitAudioContext;
@@ -499,12 +497,13 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
       gain.connect(comp);
       comp.connect(analyser);
       analyser.connect(ctx.destination);
-      g = { ctx, pre, filters, gain, comp, analyser };
+      const freqBuf = new Uint8Array(analyser.frequencyBinCount);
+      g = { ctx, pre, filters, gain, comp, analyser, freqBuf };
       audioGraphs.set(video, g);
       hookAudioPause(video, g);
       try { audioCtxs.add(ctx); } catch {}
     } catch {
-      return null; // already routed / unsupported — leave element alone
+      return null;
     }
     return g;
   }
@@ -513,13 +512,12 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
       const v = activeVideo();
       if (!v) return;
       const want = on() && s.enhVolumeBoost ? parseFloat(s.enhBoostValue) || 2 : 1;
-      if (want <= 1 && !audioGraphs.get(v)) return; // off + no graph: nothing to do
+      if (want <= 1 && !audioGraphs.get(v)) return;
       const g = ensureAudioGraph(v);
       if (!g) return;
       try {
         tryResumeAudio(g, v);
-        if (v.paused) return; // no signal: don't pile automation on frozen currentTime
-        // Smooth ramp, never a hard assignment — hard jumps pop on replay.
+        if (v.paused) return;
         if (Math.abs(g.gain.gain.value - want) > 0.01) g.gain.gain.setTargetAtTime(want, g.ctx.currentTime, 0.03);
       } catch {}
     } catch {}
@@ -529,17 +527,10 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
       const enabled = on() && s.enhEQ;
       const gains = eqGains();
       const userPreDb = enabled ? (Math.min(6, Math.max(-12, +s.enhEqPreamp || 0))) : 0;
-      // Unity headroom (audiophile rule): preamp + peak boost must stay <= 0
-      // dB or loud passages clip. The popup applies this on preset change,
-      // but fresh installs (Rock +4dB, pre 0) and custom drags bypass it —
-      // enforce here so no setting can blast. Boosts only: cuts can't clip,
-      // so they must not force attenuation (matches popup.js auto-preamp).
       const peak = enabled ? Math.max(0, ...gains) : 0;
       const preDb = Math.min(userPreDb, -peak);
       const q = { narrow: 2, normal: 1, wide: 0.5 }[s.enhEqQ] || 1;
       const preGain = Math.pow(10, preDb / 20);
-      // Key excludes live gains: dynamic loudness reshapes them on every volume
-      // step, which must not re-toast (filters still follow every sweep).
       const key = `${enabled}|${s.enhEqPreset}|${preDb}|${q}`;
       const v = activeVideo();
       if (!v) return;
@@ -547,13 +538,12 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
       if (!active && !audioGraphs.get(v)) { lastEqKey = key; eqInit = true; return; }
       const g = ensureAudioGraph(v);
       if (!g) {
-        // Pre-gesture deferral is normal — stay silent until unlock.
         if (hasAudioGesture() && !eqUnavailableToast) { eqUnavailableToast = true; toast('Equalizer unavailable in this browser'); }
         return;
       }
       try {
         tryResumeAudio(g, v);
-        if (v.paused) return; // parked while paused — sweeps resume on play
+        if (v.paused) return;
         const t = g.ctx.currentTime;
         if (Math.abs(g.pre.gain.value - preGain) > 0.005) g.pre.gain.setTargetAtTime(preGain, t, 0.03);
         for (let i = 0; i < 10; i++) {
@@ -562,7 +552,6 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
           }
           if (Math.abs(g.filters[i].Q.value - q) > 0.01) g.filters[i].Q.setTargetAtTime(q, t, 0.03);
         }
-        // Self-report on user-driven changes (silent on page load).
         if (key !== lastEqKey) {
           const first = !eqInit;
           lastEqKey = key;
@@ -580,7 +569,7 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
     } catch {}
   }
 
-  /* 9b) Limiter (clip safety net) + spectrum overlay tap. */
+  /* 9b) Limiter + spectrum overlay tap (buffer/gradient cached, pauses when hidden). */
   function limiterSweep() {
     try {
       const v = activeVideo();
@@ -589,7 +578,7 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
       const wantOn = on() && s.enhLimiter;
       try {
         tryResumeAudio(g, v);
-        if (v.paused) return; // parked while paused — sweeps resume on play
+        if (v.paused) return;
         const t = g.ctx.currentTime;
         const th = wantOn ? -3 : 0, ra = wantOn ? 20 : 1;
         if (Math.abs(g.comp.threshold.value - th) > 0.01) g.comp.threshold.setTargetAtTime(th, t, 0.03);
@@ -600,6 +589,7 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
   let specRAF = 0;
   function spectrumTick() {
     specRAF = 0;
+    if (document.hidden) return;
     let want = false;
     try {
       const v = on() && s.enhSpectrum ? activeVideo() : null;
@@ -624,14 +614,17 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
         cv.style.display = 'block';
         try {
           const c2d = cv.getContext('2d');
-          const data = new Uint8Array(g.analyser.frequencyBinCount);
+          const data = g.freqBuf;
           g.analyser.getByteFrequencyData(data);
           const W = cv.width, H = cv.height, N = 28;
+          if (!cv.__tb_grad) {
+            const grad = c2d.createLinearGradient(0, H, 0, 0);
+            grad.addColorStop(0, '#00adee');
+            grad.addColorStop(1, '#e62117');
+            cv.__tb_grad = grad;
+          }
           c2d.clearRect(0, 0, W, H);
-          const grad = c2d.createLinearGradient(0, H, 0, 0);
-          grad.addColorStop(0, '#00adee');
-          grad.addColorStop(1, '#e62117');
-          c2d.fillStyle = grad;
+          c2d.fillStyle = cv.__tb_grad;
           for (let i = 0; i < N; i++) {
             const idx = Math.min(data.length - 1, Math.floor(Math.pow(i / N, 1.7) * data.length * 0.72));
             const h = Math.max(1, (data[idx] / 255) * H);
@@ -643,6 +636,13 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
     } catch {}
     if (want) specRAF = requestAnimationFrame(spectrumTick);
   }
+  try {
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && !specRAF) {
+        try { specRAF = requestAnimationFrame(spectrumTick); } catch {}
+      }
+    });
+  } catch {}
 
   /* 10) Player buttons — loop toggle, copy-timestamp, screenshot */
   function toast(msg) {
@@ -754,7 +754,7 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
     } catch {}
   }
 
-  /* 11) Remaining time — span in .ytp-time-contents, rate-aware like upstream */
+  /* 11) Remaining time */
   function fmtTime(sec) {
     sec = Math.max(0, Math.round(sec));
     const d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60), x = sec % 60;
@@ -781,7 +781,7 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
     } catch {}
   }
 
-  /* 12) Shorts auto-scroll — advance on ended (upstream uses timeupdate; ended is cheaper) */
+  /* 12) Shorts auto-scroll */
   function shortsScrollSweep() {
     try {
       if (!on() || !s.enhShortsScroll || !location.pathname.startsWith('/shorts')) return;
@@ -799,11 +799,7 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
     } catch {}
   }
 
-  /* 13) Lite themes v2 — presets mapped onto YouTube's --yt-spec-* vars.
-   * Preset colors adapted from RaitaroH's YouTube-DeepDark (via YouTube-Enhancer).
-   * Hardened: controls live OUTSIDE labels (no untick hazard), bidirectional
-   * enforcement, doubled specificity, direct container fallbacks in case a
-   * client ignores the vars, plus a read-back self-check with a warning toast. */
+  /* 13) Lite themes v2 */
   const THEMES = {
     'pure-black': { name: 'Pure Black', color: '#ffffff', bg: '#000000', second: '#1e1e1e', hover: '#313131', text: '#ffffff', dimmer: '#aaaaaa' },
     'dracula':    { name: 'Dracula', color: '#bd93f9', bg: '#282a36', second: '#2e3140', hover: '#44475a', text: '#f8f8f2', dimmer: '#bcc2cd' },
@@ -866,7 +862,6 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
         themeWarned = false;
         if (!first) toast(`Theme: ${(THEMES[s.enhThemePreset] || {}).name || s.enhThemePreset} applied`);
       }
-      // Read-back self-check: is YouTube honoring the override?
       if (!themeWarned && st.isConnected) {
         try {
           const got = getComputedStyle(root).getPropertyValue('--yt-spec-base-background').trim().toLowerCase();
@@ -905,7 +900,7 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
     } catch {}
   }
 
-  /* 15) Hide feed clutter — posts, playlist/radio shelves, labeled badges (CSS + text sweep) */
+  /* 15) Hide feed clutter */
   const CLUTTER_CSS = `html.tb-clutter ytd-rich-item-renderer:has(ytd-post-renderer),`
     + `html.tb-clutter ytd-rich-item-renderer:has(ytd-playlist-renderer),`
     + `html.tb-clutter ytd-rich-item-renderer:has(ytd-radio-renderer){display:none!important}`;
@@ -944,7 +939,7 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
     } catch {}
   }
 
-  /* 16) Videos per row + link fixes + number-key block (applied in listeners below) */
+  /* 16) Videos per row + link fixes + number-key block */
   function perRowSweep() {
     try {
       const want = on() && s.enhPerRow;
@@ -968,7 +963,6 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
         const m = href.match(/[?&]q=([^&]+)/);
         if (m) {
           const target = decodeURIComponent(m[1]);
-          // Never upgrade a link into script execution.
           if (/^javascript:/i.test(target.trim())) return;
           a.setAttribute('href', target);
         }
@@ -977,7 +971,6 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
           const u = new URL(href, location.origin);
           u.searchParams.delete('si');
           u.searchParams.delete('feature');
-          // Keep absolute URLs absolute — pathname-only would break youtu.be links.
           const isAbs = /^[a-z][a-z0-9+.-]*:\/\//i.test(href);
           a.setAttribute('href', isAbs ? u.href : u.pathname + u.search + u.hash);
         } catch {}
@@ -1029,21 +1022,18 @@ html.tb-hide-distract #chat,html.tb-hide-distract ytd-live-chat-frame{display:no
     }, { capture: true, passive: false });
   } catch {}
 
+  function onNavigate() {
+    userChoseAutoplay = false;
+    userChoseTheater = false;
+    lastQualityKey = '';
+    setTimeout(sweep, 400);
+    setTimeout(sweep, 1800);
+  }
   setInterval(sweep, 1000);
-  let lastUrl = location.href;
-  setInterval(() => {
-    if (location.href !== lastUrl) {
-      lastUrl = location.href;
-      userChoseAutoplay = false;
-      setTimeout(sweep, 500);
-      setTimeout(sweep, 2000);
-    }
-  }, 800);
   try {
-    document.addEventListener('yt-navigate-finish', () => {
-      userChoseAutoplay = false;
-      setTimeout(sweep, 500);
-    });
+    window.addEventListener('tb-nav', onNavigate);
+    window.addEventListener('popstate', onNavigate);
+    document.addEventListener('yt-navigate-finish', onNavigate);
   } catch {}
   setTimeout(sweep, 1500);
 })();

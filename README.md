@@ -4,7 +4,7 @@
 
 **Adblock, Sponsor Skip & Enhancer — ultra-fast, privacy-first, 100% local.**
 
-[![Version](https://img.shields.io/badge/version-2.0.0-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
+[![Version](https://img.shields.io/badge/version-2.1.0-red?style=flat-square)](https://github.com/9M2PJU/trueblock-youtube-adblocker/releases)
 [![Chrome](https://img.shields.io/badge/Chrome-MV3-green?style=flat-square&logo=googlechrome)](https://github.com/9M2PJU/trueblock-youtube-adblocker)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-yellow?style=flat-square)](LICENSE)
 [![No tracking](https://img.shields.io/badge/tracking-none-blue?style=flat-square)](#-privacy)
@@ -29,10 +29,10 @@
 
 ### Firefox 🦊
 
-Same codebase, verified with Mozilla's `web-ext lint` (0 errors, 0 warnings). One thing changes for Firefox: `build.sh` emits a per-browser manifest — `background.scripts` for Firefox, `service_worker` for Chromium — everything else is identical.
+Same codebase, verified with Mozilla's `web-ext lint`. One thing changes for Firefox: `build.sh` emits per-browser manifests — `background.scripts` (without `minimum_chrome_version`) for Firefox, and `service_worker` (without `browser_specific_settings`) for Chromium.
 
-- **Try it now:** `about:debugging#/runtime/this-firefox` → *Load Temporary Add-on* → pick `manifest.json` (lasts until browser restart).
-- **Proper release:** needs signing at [addons.mozilla.org](https://addons.mozilla.org/developers/) (free account → Submit → automated checks + human review, usually days). `web-ext build` + `web-ext sign --api-key=… --api-secret=…`. Note AMO will see the honest data-use disclosure (watched video IDs go to SponsorBlock's API).
+- **Try it now:** `about:debugging#/runtime/this-firefox` → *Load Temporary Add-on* → pick `dist/firefox/manifest.json` (lasts until browser restart).
+- **Proper release:** needs signing at [addons.mozilla.org](https://addons.mozilla.org/developers/) (free account → Submit → automated checks + human review, usually days). `web-ext build` + `web-ext sign --api-key=… --api-secret=…`. Note AMO will see the honest data-use disclosure (4-char video ID hash prefixes go to SponsorBlock's API, video IDs go to RYD).
 
 ---
 
@@ -42,40 +42,40 @@ Same codebase, verified with Mozilla's `web-ext lint` (0 errors, 0 warnings). On
 
 | Layer | Where | What |
 |---|---|---|
-| **Network** | `rules/block_ads.json` | 15 MV3 `declarativeNetRequest` rules block `doubleclick`, `googlesyndication`, `googleadservices`, `stats/ads`, `ptracking`, `get_midroll_` before requests leave the browser |
-| **Player patch** | `src/inject.js` (MAIN world) | Strips `adPlacements` / `playerAds` / `adSlots` from `ytInitialPlayerResponse` and `/youtubei/v1/player` responses via `JSON.parse` + `fetch` + `XHR` hooks |
-| **Skip + clean** | `src/content.js` (ISOLATED world) | `requestAnimationFrame` skipper mutes + 16× + seeks ads to end, auto-clicks every Skip variant, removes banners/masthead/overlays/sponsored slots, kills the *“Ad blockers are not allowed”* wall and resumes playback |
+| **Network** | `rules/block_ads.json` | 15 MV3 `declarativeNetRequest` rules scoped to YouTube initiators block `doubleclick`, `googlesyndication`, `googleadservices`, `stats/ads`, `ptracking`, `get_midroll_` before requests leave the browser (synced with Master Pause) |
+| **Player patch** | `src/inject.js` (MAIN world) | Strips `adPlacements` / `playerAds` / `adSlots` / `promotedVideoRenderer` from `ytInitialPlayerResponse` and `/youtubei/v1/*` responses via `JSON.parse` + `fetch` + `XHR` hooks, removes empty ad wrapper cards, and bridges page-world player APIs |
+| **Skip + clean** | `src/content.js` (ISOLATED world) | Event-driven `requestAnimationFrame` skipper mutes + 16× + seeks active ads to end, auto-clicks every Skip variant, removes banners/masthead/overlays/sponsored slots, kills the *“Ad blockers are not allowed”* wall and resumes playback |
 
 - Pre-roll · mid-roll · post-roll · 6s bumpers · unskippable ads → gone in a <100 ms black flash
 - Sidebar / masthead / overlay / companion / in-feed ads → removed
 - Sponsored Shorts → auto-skipped
-- Live badge counter on the toolbar icon + session/total stats in the popup
+- Persistent session & total counters + live badge on the toolbar icon (Master Pause disables DNR, `inject.js`, and cosmetic CSS together)
 
 ### ✨ Enhancements (all optional — on by default: volume memory, limiter, continue-skip, sponsor skip, EQ on Rock/Metal, Pure Black theme, spectrum overlay, Shorts auto-scroll)
 
 | Group | Options |
 |---|---|
 | 🛡 Block | Skip video ads · remove banners & overlays · remove sponsored slots · skip sponsored Shorts · anti-adblock bypass |
-| ▶ Player | Auto theater · autoplay off (respects your clicks) · remember volume / speed · force quality 4K→360p · skip *“Continue watching?”* · remaining time · loop / timestamp / screenshot buttons · seek ±5–30 s + speed buttons · scroll-wheel volume · Shorts auto-scroll |
-| 🔊 Audio | Volume boost 150 / 200 / 300 % · **audiophile 10-band EQ** (ISO bands, preamp with auto-clip-guard, global Q, 7 presets + full custom sliders) · **limiter** (−3dB/20:1 safety net) · **spectrum overlay** (live analyzer), per-video WebAudio graph that parks while paused |
-| 🎨 Page | Hide Shorts everywhere · hide end cards / live chat / paid banner · hide posts, playlists, member-only, playables · videos-per-row 1–8 · unwrap redirect links + strip tracker params · block 0–9 key seeking · 11 dark themes + accent-tinted header logo |
-| 👥 Crowd | SponsorBlock skip categories · RYD dislike count + like-ratio bar |
+| ▶ Player | Auto theater · autoplay off (both respect manual clicks/hotkeys) · remember volume / speed · force quality 4K→360p (via MAIN-world player bridge) · skip *“Continue watching?”* · remaining time · loop / timestamp / screenshot buttons · seek ±5–30 s + speed buttons · scroll-wheel volume · Shorts auto-scroll |
+| 🔊 Audio | Volume boost 150 / 200 / 300 % · **audiophile 10-band EQ** (ISO bands, preamp with auto-clip-guard, global Q, 7 presets + full custom sliders) · **limiter** (−3dB/20:1 safety net) · **spectrum overlay** (live analyzer, paused in background tabs), per-video WebAudio graph that parks while paused |
+| 🎨 Page | Hide Shorts everywhere · hide end cards / live chat / paid banner · hide posts, playlists, member-only, playables · videos-per-row 1–8 · unwrap redirect links + strip tracker params · block 0–9 key seeking · 11 dark themes + accent-tinted header logo + accent reset · settings Export / Import / Defaults |
+| 👥 Crowd | SponsorBlock skip categories (+ colored progress-bar markers & Unskip toast button) · RYD dislike count (watch + active Shorts reel) + like-ratio bar |
 
 ### 🤝 SponsorBlock + 👍 Return YouTube Dislike (crowdsourced, on by default)
 
-Skips **in-video** sponsor reads, intros, outros and more using the community database — clean-room client of the public read API, no SponsorBlock code vendored:
+Skips **in-video** sponsor reads, intros, outros and more using the community database — clean-room client of the public hash-prefix API, no SponsorBlock code vendored:
 
 - 8 categories: sponsor · intro · outro · subscribe-reminder · self-promo · off-topic music · recap/preview · filler (skip-type segments only)
-- Auto-skips with a toast (`Skipped sponsor (12s) · via SponsorBlock`), per-video cache, never fights the ad-skipper, fails open offline
-- Fetched through the background worker: page-origin requests are CORS-blocked by the API, the worker's host permission is not
-- **Return YouTube Dislike:** refills the native dislike (and like) count via `returnyoutubedislikeapi.com/votes`, exact counts in the tooltip, optional like-ratio bar under the buttons, watch pages (Shorts not covered), fails open offline
+- **k-anonymous privacy:** computes SHA-256 of the video ID locally and sends only the first **4 hex characters** to `sponsor.ajayyy.com/api/skipSegments/<prefix>`
+- Auto-skips with an **Unskip** button on the toast (`Skipped sponsor (12s) · via SponsorBlock`), paints colored timeline markers on the player bar, tracks skipped segments so seeking back never loops, never fights the ad-skipper, and fails open without caching transient errors
+- **Return YouTube Dislike:** appends the dislike count cleanly without overwriting the thumbs-down SVG icon, preserves YouTube's live like count, shows exact counts in tooltips, adds an optional like-ratio bar on watch pages, supports both watch pages and the active Shorts reel, and fails open offline
 
-> Privacy note: this sends the current **video ID** to `sponsor.ajayyy.com` (segments) and `returnyoutubedislikeapi.com` (counts) — untick either to disable. Everything else in TrueBlock stays fully local.
+> Privacy note: SponsorBlock sends only a **4-character SHA-256 hash prefix** of the video ID to `sponsor.ajayyy.com`; Return YouTube Dislike sends the **video ID** to `returnyoutubedislikeapi.com`. Untick either to go fully offline.
 
 ### 🎨 Themes (v2 — rebuilt to actually stick)
 
 - **11 presets**, default **Pure Black** (unmistakable — if it applies, you'll know)
-- **Accent picker** in any color; preset default until you pick — also tints the YouTube header logo icon to match
+- **Accent picker** in any color with one-click reset (`↺`) back to the active theme's default — also tints the YouTube header logo icon to match
 - Hardened: controls live outside labels (no silent untick), bidirectional enforcement, doubled-specificity selectors + direct container fallbacks, and a read-back self-check that toasts a warning if your YouTube variant ignores the override
 
 ---
@@ -84,28 +84,30 @@ Skips **in-video** sponsor reads, intros, outros and more using the community da
 
 ```
 manifest.json          # MV3 manifest (min Chrome 116)
-rules/block_ads.json   # network blocklist (15 DNR rules)
+rules/block_ads.json   # network blocklist (15 YouTube-scoped DNR rules)
 src/
-  inject.js            # MAIN-world player-response cleaner
-  content.js           # ad skipper + DOM cleaner + anti-adblock
-  sponsorblock.js      # crowdsourced sponsor skipping, on by default (original API client)
-  ryd.js               # Return YouTube Dislike counts, on by default (original API client)
-  enhancements.js      # 22 optional enhancements + v2 themes (~40 KB vanilla JS)
-  content.css          # cosmetic ad hiding
-  background.js        # badge counter + stats
-  popup.html/.css/.js  # control panel + About dialog
+  inject.js            # MAIN-world player/feed cleaner + player API bridge
+  content.js           # event-driven ad skipper + DOM cleaner + anti-adblock
+  sponsorblock.js      # hash-prefix SponsorBlock client + markers + Unskip
+  ryd.js               # Return YouTube Dislike counts (original API client)
+  enhancements.js      # 22 optional enhancements + v2 themes + EQ/spectrum
+  content.css          # toggle-gated cosmetic ad hiding + UI helpers
+  background.js        # persistent stats, DNR ruleset sync & CORS API proxy
+  popup.html/.css/.js  # tabbed control panel + About & Export/Import/Defaults
+tests/
+  verify.mjs           # zero-dependency automated verification suite
 icons/                 # toolbar icons
 ```
 
-Zero dependencies. No build step for development — just load the folder. `./build.sh` cuts the per-browser store zips (`TrueBlock-Chrome.zip`, `TrueBlock-Firefox.zip`).
+Zero dependencies. No build step for development — just load the folder. Run `bun tests/verify.mjs` to execute the test suite, and `./build.sh` to cut the per-browser store zips (`TrueBlock-Chrome.zip`, `TrueBlock-Firefox.zip`).
 
 ---
 
 ## 🔒 Privacy
 
-- **No servers, no analytics, no telemetry.** Everything runs on-device — except the **SponsorBlock** + **Return YouTube Dislike** lookups (on by default), which send only the video ID to `sponsor.ajayyy.com` / `returnyoutubedislikeapi.com`.
+- **No servers, no analytics, no telemetry.** Everything runs on-device — except **SponsorBlock** (4-char SHA-256 hash prefix of the video ID to `sponsor.ajayyy.com`) and **Return YouTube Dislike** (video ID to `returnyoutubedislikeapi.com`), both toggleable in the popup.
 - Settings live in `chrome.storage` only. Nothing ever leaves your browser.
-- Permissions are minimal: ad/tracker hosts + `declarativeNetRequest` + `storage`. No `<all_urls>`, no tab reading, no history access.
+- Permissions are minimal: `declarativeNetRequest`, `storage`, `alarms`, plus YouTube, SponsorBlock, and RYD hosts only. No `declarativeNetRequestFeedback`, no `web_accessible_resources`, no `<all_urls>`, no tab reading, no history access.
 
 ---
 
@@ -121,12 +123,13 @@ Free forever, no ads, no tracking. If TrueBlock saves your sanity, chip in:
 - Enhancement concepts: [YouTube-Enhancer/extension](https://github.com/YouTube-Enhancer/extension) (MIT) — re-implemented natively, no upstream code vendored.
 - Equalizer concept: [aashishjhaa/eq-for-youtube](https://github.com/aashishjhaa/eq-for-youtube) (no license declared — original implementation, nothing copied; standard 10-band WebAudio design).
 - EQ curves informed by SFX Engine's [7 Best Equalizer Settings for Music](https://sfxengine.com/blog/best-equalizer-settings-for-music) (vocal presence, mud/sibilance control, Fletcher-Munson loudness, rock body+bite).
-- In-video sponsor skipping inspired by [ajayyy/SponsorBlock](https://github.com/ajayyy/SponsorBlock) (GPL-3.0) via its public read API — original client code, nothing copied.
+- In-video sponsor skipping inspired by [ajayyy/SponsorBlock](https://github.com/ajayyy/SponsorBlock) (GPL-3.0) via its public hash-prefix read API — original client code, nothing copied.
 - Dislike counts via [Return YouTube Dislike](https://returnyoutubedislike.com) public read API — original client code, nothing copied.
 - License: [GPL-3.0](LICENSE) — Copyright © 2026 9M2PJU. PRs welcome — especially updated selectors when YouTube moves things around (`SKIP_SELECTORS` in `src/content.js`).
 
 ## 📝 Changelog
 
+- **v2.1.0** — MAIN-world player API bridge (fixes Force Quality, folded Autoplay, Continue Watching patch), persistent session/total counters & daily alarm fix, true Master Pause (syncs DNR ruleset, `inject.js`, and CSS flags), SponsorBlock k-anonymous hash-prefix API + timeline markers + Unskip button + seek-back guard, RYD preserves Dislike SVG icon & live Like counts, Auto-Theater respects manual toggles, event-driven ad rAF & spectrum buffer caching (lower CPU), scoped DNR rules & trimmed permissions (dropped `declarativeNetRequestFeedback`, ad host permissions, and `web_accessible_resources`), popup accent reset + Export/Import/Defaults, automated `tests/verify.mjs`
 - **v2.0.0** — Popup UI/UX redesign: tabbed layout (Block · Player · Audio · Page · Crowd), switch toggles, vertical graphic EQ, dark mode; 6 new themes; header logo icon auto-tints to the theme accent
 - **v1.11.0** — 6 new themes (Classic Red, Nord, Gruvbox, Tokyo Night, Solarized, Forest); popup preamp range fixed to effective values
 - **v1.10.4** — Fix loud blast after pause/replay: ad-skipper restores pre-ad speed/mute/volume instead of stranding 16x, volume memory no longer unmutes burning ads, EQ enforces clip headroom (preamp + peak ≤ 0dB), audio graph parks while paused and resumes on play

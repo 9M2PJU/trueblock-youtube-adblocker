@@ -19,8 +19,8 @@ const DEFAULTS = {
   enhSpectrum: true,
   enhEQ: true,
   enhEqPreset: 'rock',
-  enhEqGains: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  enhEqPreamp: '0',
+  enhEqGains: [2, 4, 2, 3, 1, 0, 1, 4, 2, 1],
+  enhEqPreamp: '-4',
   enhEqQ: 'normal',
   enhScreenshot: false,
   enhPlayerButtons: false,
@@ -46,13 +46,35 @@ const DEFAULTS = {
 };
 const ids = Object.keys(DEFAULTS);
 
+const THEME_ACCENTS = {
+  'pure-black': '#ffffff',
+  'classic': '#ff0000',
+  'dracula': '#bd93f9',
+  'mocha': '#cba6f7',
+  'nord': '#88c0d0',
+  'gruvbox': '#fabd2f',
+  'tokyo': '#7aa2f7',
+  'solarized': '#268bd2',
+  'forest': '#4caf50',
+  'discord': '#7289da',
+  'deep-dark': '#00adee'
+};
+
+function syncAccentUI(accent, preset) {
+  const picker = document.getElementById('enhAccent');
+  const reset = document.getElementById('enhAccentReset');
+  const hasCustom = /^#[0-9a-fA-F]{6}$/.test(accent || '');
+  if (picker) picker.value = hasCustom ? accent : (THEME_ACCENTS[preset] || '#ffffff');
+  if (reset) reset.disabled = !hasCustom;
+}
+
 async function load() {
   const vals = await chrome.storage.sync.get(DEFAULTS);
   for (const id of ids) {
     const el = document.getElementById(id);
     if (!el) continue;
     if (el.type === 'checkbox') el.checked = !!vals[id];
-    else if (el.type === 'color') el.value = vals[id] || '#ffffff';
+    else if (id === 'enhAccent') syncAccentUI(vals.enhAccent, vals.enhThemePreset);
     else el.value = vals[id] ?? el.value;
   }
   refreshStats();
@@ -75,18 +97,39 @@ async function refreshStats() {
       return;
     }
   } catch {}
-  const v = await chrome.storage.local.get({ totalBlocked: 0 });
-  document.getElementById('totalCount').textContent = v.totalBlocked || 0;
+  try {
+    const v = await chrome.storage.local.get({ totalBlocked: 0 });
+    document.getElementById('totalCount').textContent = v.totalBlocked || 0;
+    if (chrome.storage.session) {
+      const s = await chrome.storage.session.get({ sessionBlocked: 0 });
+      document.getElementById('sessionCount').textContent = s.sessionBlocked || 0;
+    }
+  } catch {}
 }
 
 for (const id of ids) {
+  if (id === 'enhEqPreset') continue;
   document.getElementById(id)?.addEventListener('change', async (e) => {
     const el = e.target;
     const val = el.type === 'checkbox' ? el.checked : el.value;
     await chrome.storage.sync.set({ [id]: val });
     if (id === 'enabled') refreshPill(el.checked);
+    if (id === 'enhAccent') {
+      const preset = document.getElementById('enhThemePreset')?.value || 'pure-black';
+      syncAccentUI(val, preset);
+    }
+    if (id === 'enhThemePreset') {
+      const vals = await chrome.storage.sync.get({ enhAccent: '' });
+      if (!vals.enhAccent) syncAccentUI('', val);
+    }
   });
 }
+
+document.getElementById('enhAccentReset')?.addEventListener('click', async () => {
+  await chrome.storage.sync.set({ enhAccent: '' });
+  const preset = document.getElementById('enhThemePreset')?.value || 'pure-black';
+  syncAccentUI('', preset);
+});
 
 // Debounced writer: slider drags fire dozens of events/sec but storage.sync
 // allows ~120 writes/min — batch them so realtime drags never drop writes.
@@ -104,7 +147,6 @@ async function flushSaves(retry) {
   if (!Object.keys(batch).length) return;
   try { await chrome.storage.sync.set(batch); }
   catch {
-    // One retry only — then drop (next drag rewrites anyway). No spin loop.
     if (!retry) {
       Object.assign(pendingSaves, batch);
       clearTimeout(saveTimer);
@@ -124,7 +166,13 @@ const EQ_TABLE = {
   rock: [2, 4, 2, 3, 1, 0, 1, 4, 2, 1]
 };
 function paintEq(vals) {
-  const gains = Array.isArray(vals.enhEqGains) && vals.enhEqGains.length === 10 ? vals.enhEqGains : EQ_TABLE.flat;
+  let gains = Array.isArray(vals.enhEqGains) && vals.enhEqGains.length === 10 ? vals.enhEqGains : EQ_TABLE.flat;
+  let preamp = vals.enhEqPreamp ?? '0';
+  const preset = vals.enhEqPreset;
+  if (preset && preset !== 'custom' && preset !== 'flat' && EQ_TABLE[preset] && gains.every((g) => g === 0)) {
+    gains = EQ_TABLE[preset];
+    preamp = String(-Math.max(0, ...gains));
+  }
   document.querySelectorAll('.eqband').forEach((sl) => {
     const i = +sl.dataset.i;
     sl.value = gains[i] ?? 0;
@@ -133,7 +181,7 @@ function paintEq(vals) {
   });
   const pre = document.getElementById('enhEqPreamp');
   if (pre) {
-    pre.value = vals.enhEqPreamp ?? '0';
+    pre.value = preamp;
     const pv = document.getElementById('enhEqPreampVal');
     if (pv) pv.textContent = ((+pre.value > 0 ? '+' : '') + pre.value) + 'dB';
   }
@@ -142,10 +190,11 @@ document.getElementById('enhEqPreset')?.addEventListener('change', async (e) => 
   const name = e.target.value;
   if (name !== 'custom' && EQ_TABLE[name]) {
     const gains = [...EQ_TABLE[name]];
-    // Auto-preamp: cut by the peak boost so presets never clip (audiophile rule).
     const preamp = String(-Math.max(0, ...gains));
-    await chrome.storage.sync.set({ enhEqGains: gains, enhEqPreamp: preamp });
-    paintEq({ enhEqGains: gains, enhEqPreamp: preamp });
+    await chrome.storage.sync.set({ enhEqPreset: name, enhEqGains: gains, enhEqPreamp: preamp });
+    paintEq({ enhEqPreset: name, enhEqGains: gains, enhEqPreamp: preamp });
+  } else {
+    await chrome.storage.sync.set({ enhEqPreset: name });
   }
 });
 document.querySelectorAll('.eqband').forEach((sl) => {
@@ -166,7 +215,7 @@ document.getElementById('enhEqPreamp')?.addEventListener('input', (e) => {
 });
 document.getElementById('enhEqPreamp')?.addEventListener('change', () => flushSaves());
 
-// Tabs: single-purpose sections instead of one giant scrolling list.
+// Tabs
 document.querySelectorAll('.tab').forEach((btn) => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach((b) => {
@@ -185,7 +234,7 @@ document.getElementById('resetBtn')?.addEventListener('click', async () => {
   refreshStats();
 });
 
-// About dialog: version from manifest, links to 9M2PJU + GitHub repo
+// About dialog + Export/Import/Defaults
 const REPO_URL = 'https://github.com/9M2PJU/trueblock-youtube-adblocker';
 try {
   const manifest = chrome.runtime.getManifest();
@@ -195,6 +244,15 @@ try {
   if (repoEl) repoEl.href = REPO_URL;
 } catch {}
 const aboutDialog = document.getElementById('aboutDialog');
+const aboutMsg = document.getElementById('aboutMsg');
+function showAboutMsg(text, isError = false) {
+  if (!aboutMsg) return;
+  aboutMsg.textContent = text;
+  aboutMsg.style.color = isError ? 'var(--accent)' : 'var(--green)';
+  aboutMsg.hidden = false;
+  clearTimeout(aboutMsg.__t);
+  aboutMsg.__t = setTimeout(() => { aboutMsg.hidden = true; }, 2500);
+}
 document.getElementById('aboutBtn')?.addEventListener('click', () => {
   aboutDialog?.removeAttribute('hidden');
 });
@@ -208,11 +266,79 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') aboutDialog?.setAttribute('hidden', '');
 });
 
-// Guard: selects / color pickers nested in row labels must not toggle the checkbox
-document.querySelectorAll('label.row select, label.row input[type="color"]').forEach((el) => {
+document.getElementById('exportBtn')?.addEventListener('click', async () => {
+  try {
+    const vals = await chrome.storage.sync.get(DEFAULTS);
+    const blob = new Blob([JSON.stringify(vals, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'trueblock-settings.json';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    showAboutMsg('Settings exported');
+  } catch {
+    showAboutMsg('Export failed', true);
+  }
+});
+
+document.getElementById('importBtn')?.addEventListener('click', () => {
+  document.getElementById('importFile')?.click();
+});
+
+document.getElementById('importFile')?.addEventListener('change', async (e) => {
+  const file = e.target.files?.[0];
+  e.target.value = '';
+  if (!file) return;
+  try {
+    const parsed = JSON.parse(await file.text());
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('invalid');
+    const patch = {};
+    for (const k of ids) {
+      if (!(k in parsed)) continue;
+      const def = DEFAULTS[k];
+      const v = parsed[k];
+      if (k === 'enhEqGains') {
+        if (Array.isArray(v) && v.length === 10 && v.every((n) => Number.isFinite(+n))) {
+          patch[k] = v.map((n) => Math.min(12, Math.max(-12, +n)));
+        }
+      } else if (typeof def === 'boolean' && typeof v === 'boolean') {
+        patch[k] = v;
+      } else if (typeof def === 'string' && typeof v === 'string') {
+        patch[k] = v;
+      }
+    }
+    if (!Object.keys(patch).length) throw new Error('empty');
+    await chrome.storage.sync.set(patch);
+    await load();
+    showAboutMsg('Settings imported');
+  } catch {
+    showAboutMsg('Invalid settings file', true);
+  }
+});
+
+document.getElementById('defaultsBtn')?.addEventListener('click', async () => {
+  try {
+    await chrome.storage.sync.set(DEFAULTS);
+    await load();
+    showAboutMsg('Defaults restored');
+  } catch {
+    showAboutMsg('Reset failed', true);
+  }
+});
+
+// Guard: selects / color pickers / reset button nested in row labels must not toggle checkbox
+document.querySelectorAll('label.row select, label.row input[type="color"], label.row .icon-btn').forEach((el) => {
   el.addEventListener('mousedown', (e) => e.stopPropagation());
   el.addEventListener('click', (e) => e.stopPropagation());
 });
 
-setInterval(refreshStats, 1000);
+try {
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if ((area === 'local' && changes.totalBlocked) || (area === 'session' && changes.sessionBlocked)) {
+      refreshStats();
+    }
+  });
+} catch {}
+
 load();
